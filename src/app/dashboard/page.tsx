@@ -54,7 +54,7 @@ export default async function Dashboard() {
         <CallDetails {...callDetails} />
         <CrewDetails crewMembers={crewMembers} />
       </div>
-      <div className="w-3/5 bg-bg-gray-2">
+      <div className="flex w-3/5 items-center justify-center rounded-lg bg-bg-gray-2 p-3">
         <Map />
       </div>
     </main>
