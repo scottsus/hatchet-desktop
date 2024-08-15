@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 
 import { Sidebar } from '../components/sidebar';
+import { cn } from '../lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={cn('flex gap-x-2', inter.className)}>
         <Sidebar />
         <div className="flex-grow overflow-auto">{children}</div>
       </body>
