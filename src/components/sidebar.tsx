@@ -3,63 +3,58 @@
 import logo from '@/public/HatchetLogo.svg';
 import { ClipboardListIcon, ContactIcon, TargetIcon } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useSelectedLayoutSegments } from 'next/navigation';
+import { useMemo } from 'react';
 
 import { cn } from '../lib/utils';
 
-enum View {
-  Overview = 'overview',
-  ActiveCall = 'active-call',
-  Sensor = 'sensor',
-}
-
 export function Sidebar() {
-  const [view, setView] = useState<View>(View.Overview);
+  const segments = useSelectedLayoutSegments();
+  const sidebarItems = useMemo(() => getSidebarItems({ segments }), [segments]);
 
   return (
-    <div className="flex flex-col w-20 p-2 items-center bg-bg-gray-1">
-      <Image src={logo} alt="Hatchet" className="my-10 w-3/5" />
+    <div className="flex w-16 flex-col items-center bg-bg-gray-2 p-2">
+      <Image src={logo} alt="Hatchet" className="my-6 w-3/5" />
       <div className="flex flex-col gap-y-4">
-        <Icon
-          isSelected={view === View.Overview}
-          setView={() => setView(View.Overview)}
-          Icon={TargetIcon}
-        />
-        <Icon
-          isSelected={view === View.ActiveCall}
-          setView={() => setView(View.ActiveCall)}
-          Icon={ClipboardListIcon}
-        />
-        <Icon
-          isSelected={view === View.Sensor}
-          setView={() => setView(View.Sensor)}
-          Icon={ContactIcon}
-        />
+        {sidebarItems.map((item) => (
+          <Link key={item.title} href={item.href}>
+            <button
+              className={cn(
+                'cursor-pointer rounded-sm border p-2 transition-all hover:border-white hover:text-white',
+                item.isActive
+                  ? 'border-primary bg-primary/20 text-primary'
+                  : 'text-bg-gray-4 border-bg-gray-4',
+              )}
+            >
+              <span>{item.icon}</span>
+            </button>
+          </Link>
+        ))}
       </div>
     </div>
   );
 }
 
-function Icon({
-  isSelected,
-  setView,
-  Icon,
-}: {
-  isSelected: boolean;
-  setView: () => void;
-  Icon: React.ElementType;
-}) {
-  return (
-    <button
-      className={cn(
-        'border p-2 rounded-sm cursor-pointer hover:text-white hover:border-white transition-all',
-        isSelected
-          ? 'border-primary text-primary bg-primary/20'
-          : 'border-bg-gray-3 text-bg-gray-3',
-      )}
-      onClick={setView}
-    >
-      <Icon />
-    </button>
-  );
+function getSidebarItems({ segments }: { segments: string[] }) {
+  return [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+      isActive: segments.includes('dashboard'),
+      icon: <TargetIcon />,
+    },
+    {
+      title: 'Active Call',
+      href: '/active-call',
+      isActive: segments.includes('active-call'),
+      icon: <ClipboardListIcon />,
+    },
+    {
+      title: 'Sensor',
+      href: '/sensor',
+      isActive: segments.includes('sensor'),
+      icon: <ContactIcon />,
+    },
+  ];
 }

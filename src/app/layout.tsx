@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: '🪓 Hatchet',
-  description: 'Firefighting Safety, Reimagined',
+  description: 'Firefighting Safety - Reimagined',
 };
 
 export default function RootLayout({
@@ -20,9 +20,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn('flex gap-x-2', inter.className)}>
+      <body
+        className={cn(
+          'flex bg-bg-gray-1 min-h-screen text-text-default text-sm font-normal',
+          inter.className,
+        )}
+      >
         <Sidebar />
-        <div className="flex-grow overflow-auto">{children}</div>
+        <div className="flex flex-1 overflow-auto">{children}</div>
       </body>
     </html>
   );

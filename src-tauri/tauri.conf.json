@@ -56,10 +56,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
-        "resizable": true,
-        "title": "Hatchet",
-        "width": 800
+        "resizable": false,
+        "width": 1200,
+        "height": 835,
+        "title": "🪓 Hatchet"
       }
     ]
   }

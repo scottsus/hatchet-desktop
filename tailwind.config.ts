@@ -17,11 +17,13 @@ const config: Config = {
         gray: {
           1: '#262626',
           2: '#303030',
-          3: '#CBCBCB',
+          3: '#434343',
+          4: '#CBCBCB',
         },
       },
       text: {
         default: '#FFFFFF',
+        muted: '#FFFFFFB2',
       },
       ...colors,
     },
