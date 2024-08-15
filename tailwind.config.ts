@@ -12,6 +12,17 @@ const config: Config = {
       },
     },
     colors: {
+      primary: '#ED7D31',
+      bg: {
+        gray: {
+          1: '#262626',
+          2: '#303030',
+          3: '#CBCBCB',
+        },
+      },
+      text: {
+        default: '#FFFFFF',
+      },
       ...colors,
     },
   },
