@@ -48,13 +48,13 @@ export default async function Dashboard() {
   ];
 
   return (
-    <main className="flex size-full gap-x-10 bg-bg-gray-1 p-6">
-      <div className="flex w-2/5 flex-col items-start gap-y-4">
+    <main className="flex h-screen w-full gap-x-3 bg-bg-gray-1 p-4">
+      <div className="flex w-[37%] flex-col items-start gap-y-4">
         <Info />
         <CallDetails {...callDetails} />
         <CrewDetails crewMembers={crewMembers} />
       </div>
-      <div className="flex w-3/5 items-center justify-center rounded-lg bg-bg-gray-2 p-3">
+      <div className="flex w-[63%] items-center justify-center rounded-lg bg-bg-gray-2 p-3">
         <Map />
       </div>
     </main>

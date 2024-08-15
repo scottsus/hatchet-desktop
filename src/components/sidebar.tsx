@@ -24,7 +24,7 @@ export function Sidebar() {
                 'cursor-pointer rounded-sm border p-2 transition-all hover:border-white hover:text-white',
                 item.isActive
                   ? 'border-primary bg-primary/20 text-primary'
-                  : 'text-bg-gray-4 border-bg-gray-4',
+                  : 'text-bg-gray-5 border-bg-gray-5',
               )}
             >
               <span>{item.icon}</span>
