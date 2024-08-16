@@ -1,7 +1,7 @@
 export default async function Home() {
   return (
-    <main className="flex flex-col items-center justify-between size-full">
-      <h1>Home Page</h1>
+    <main className="flex size-full flex-col items-center justify-center">
+      <h1 className="text-4xl">🪓 Hatchet</h1>
     </main>
   );
 }
