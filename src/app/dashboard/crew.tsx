@@ -1,5 +1,7 @@
 'use client';
 
+import 'mapbox-gl/dist/mapbox-gl.css';
+
 import { ProgressBar } from '@/src/components/progress';
 import { cn } from '@/src/lib/utils';
 import { Crew } from '@/src/types/crew';
@@ -9,22 +11,37 @@ import {
   SquarePlusIcon,
   TargetIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { SyncLoader } from 'react-spinners';
 
 export function CrewDetails({ crewMembers }: { crewMembers: Crew[] }) {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, []);
   return (
     <div className="flex h-full w-full flex-col overflow-y-scroll rounded-lg bg-bg-gray-2 p-4">
-      <div className="flex items-center justify-between gap-x-2">
-        <h1 className="">Call Details</h1>
-        <hr className="flex-1 border-bg-gray-3" />
-        <SquarePlusIcon size={18} className="text-primary" />
-      </div>
-
-      <div className="mt-5 flex flex-col gap-y-3">
-        {crewMembers.map((crew, index) => (
-          <CrewDetail key={crew.name} crew={crew} index={index} />
-        ))}
-      </div>
+      {loading ? (
+        <SyncLoader color="#ED7D31" size={10} />
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-x-2">
+            <h1 className="">Call Details</h1>
+            <hr className="flex-1 border-bg-gray-3" />
+            <SquarePlusIcon size={18} className="text-primary" />
+          </div>
+          <div className="mt-5 flex flex-col gap-y-3">
+            {crewMembers.map((crew, index) => (
+              <CrewDetail key={index} crew={crew} index={index} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -95,7 +112,7 @@ function Timer({ time }: { time: string }) {
   const toggleIsCounting = () => setIsCounting((isCounting) => !isCounting);
 
   return (
-    <div className="border-bg-gray-4 flex w-full items-center justify-between rounded-sm border bg-bg-gray-3 px-2 py-1.5">
+    <div className="flex w-full items-center justify-between rounded-sm border border-bg-gray-4 bg-bg-gray-3 px-2 py-1.5">
       <span className="text-xs font-thin">{time}</span>
       <PauseIcon
         size={18}
@@ -110,7 +127,7 @@ function Temperature({ temperature }: { temperature: number }) {
   const progress = (temperature / 300) * 100;
 
   return (
-    <div className="border-bg-gray-4 flex w-full items-center justify-between gap-x-4 rounded-sm border bg-bg-gray-3 px-2 py-1.5">
+    <div className="flex w-full items-center justify-between gap-x-4 rounded-sm border border-bg-gray-4 bg-bg-gray-3 px-2 py-1.5">
       <span className="text-xs font-thin">{temperature}°F</span>
       <ProgressBar progress={progress} color="bg-green-500" />
     </div>

@@ -15,7 +15,9 @@ export function Sidebar() {
 
   return (
     <div className="flex w-16 flex-col items-center bg-bg-gray-2 p-2">
-      <Image src={logo} alt="Hatchet" className="my-6 w-3/5" />
+      <Link href="/" className="my-6">
+        <Image src={logo} alt="Hatchet" width={40} />
+      </Link>
       <div className="flex flex-col gap-y-4">
         {sidebarItems.map((item) => (
           <Link key={item.title} href={item.href}>
@@ -24,7 +26,7 @@ export function Sidebar() {
                 'cursor-pointer rounded-sm border p-2 transition-all hover:border-white hover:text-white',
                 item.isActive
                   ? 'border-primary bg-primary/20 text-primary'
-                  : 'text-bg-gray-5 border-bg-gray-5',
+                  : 'border-bg-gray-5 text-bg-gray-5',
               )}
             >
               <span>{item.icon}</span>
@@ -39,16 +41,16 @@ export function Sidebar() {
 function getSidebarItems({ segments }: { segments: string[] }) {
   return [
     {
+      title: 'Active Call',
+      href: '/calls',
+      isActive: segments.includes('active-call'),
+      icon: <ClipboardListIcon />,
+    },
+    {
       title: 'Dashboard',
       href: '/dashboard',
       isActive: segments.includes('dashboard'),
       icon: <TargetIcon />,
-    },
-    {
-      title: 'Active Call',
-      href: '/active-call',
-      isActive: segments.includes('active-call'),
-      icon: <ClipboardListIcon />,
     },
     {
       title: 'Sensor',
