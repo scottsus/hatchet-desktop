@@ -55,13 +55,15 @@ export function Map() {
 
   useEffect(() => {
     if (map.current) return;
-
+  
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
     map.current = new mapboxgl.Map(mapboxConfig(mapContainer.current));
-
+  
     map.current.on('load', () => {
       setTimeout(() => {
-        loadCSVAndDrawPath(map.current!, marker.current);
+        loadCSVAndDrawPath(map.current!, marker.current, '/apt2.csv', '#ED7D31', 'route1', 'layer1', 55, 1, 0.8);
+        loadCSVAndDrawPath(map.current!, marker.current, '/apt4.1.csv', '#1E90FF', 'route2', 'layer2', 90, 1, 0.8);
+        loadCSVAndDrawPath(map.current!, marker.current, '/apt3.csv', '#FF0000', 'route3', 'layer3', 105, 0.9, 0.8);
       }, 3000);
     });
   }, []);
@@ -72,14 +74,21 @@ export function Map() {
 async function loadCSVAndDrawPath(
   map: mapboxgl.Map,
   marker: mapboxgl.Marker | null,
+  csvUrl: string,
+  lineColor: string,
+  sourceId: string,
+  layerId: string,
+  rotationAngle: number,
+  shrinkFactorX: number,
+  shrinkFactorY: number
 ) {
-  const response = await fetch('/apt4.1.csv');
+  const response = await fetch(csvUrl);
   const csvText = await response.text();
   const lines = csvText.trim().split('\n');
 
   const coordinates: number[][] = [];
 
-  map.addSource('route', {
+  map.addSource(sourceId, {
     type: 'geojson',
     data: {
       type: 'Feature',
@@ -92,15 +101,15 @@ async function loadCSVAndDrawPath(
   });
 
   map.addLayer({
-    id: 'route',
+    id: layerId,
     type: 'line',
-    source: 'route',
+    source: sourceId,
     layout: {
       'line-join': 'round',
       'line-cap': 'round',
     },
     paint: {
-      'line-color': '#ED7D31',
+      'line-color': lineColor,
       'line-width': 2,
       'line-dasharray': [2, 1], // [dash length, gap length]
     },
@@ -149,16 +158,16 @@ async function loadCSVAndDrawPath(
       dy,
       initial_lat,
       initial_lon,
-      90, // 90 degrees clockwise
-      1,
-      0.8
+      rotationAngle,
+      shrinkFactorX,
+      shrinkFactorY
     );
     const coord = [new_lon, new_lat];
     coordinates.push(coord);
 
     await sleep(50);
 
-    const source = map.getSource('route');
+    const source = map.getSource(sourceId);
     if (source) {
       (source as mapboxgl.GeoJSONSource).setData({
         type: 'Feature',
@@ -176,11 +185,52 @@ async function loadCSVAndDrawPath(
     const markerElement = document.createElement('div');
     markerElement.classList.add(
       'marker',
-      'bg-primary',
       'rounded-full',
       'w-2',
       'h-2'
     );
+    markerElement.style.backgroundColor = lineColor;
     new mapboxgl.Marker(markerElement).setLngLat([new_lon, new_lat]).addTo(map);
   }
+}
+
+function enablePathDragAndDrop(map: mapboxgl.Map, sourceId: string, layerId: string) {
+  let isDragging = false;
+  let draggedPointIndex = -1;
+
+  map.on('mousedown', layerId, (e) => {
+    if (!e.features || !e.features.length) return;
+    isDragging = true;
+    if (e.features[0].properties) {
+      draggedPointIndex = e.features[0].properties.index;
+    }
+    map.getCanvas().style.cursor = 'grab';
+  });
+
+  map.on('mousemove', (e) => {
+    if (!isDragging) return;
+    const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+    const coordinates = (source as any)._data.geometry.coordinates;
+    coordinates[draggedPointIndex] = [e.lngLat.lng, e.lngLat.lat];
+    (map.getSource(sourceId) as mapboxgl.GeoJSONSource).setData({
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: coordinates,
+      },
+    });
+  });
+
+  map.on('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    map.getCanvas().style.cursor = '';
+  });
+
+  map.on('mouseleave', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    map.getCanvas().style.cursor = '';
+  });
 }
