@@ -48,25 +48,25 @@ const mapboxConfig = (ref: any) =>
     attributionControl: false,
   }) as MapOptions;
 
-export function Map() {
-  const mapContainer = useRef<any>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const marker = useRef<mapboxgl.Marker | null>(null);
+  export function Map({ updateCrewTemperature, updateCrewThesiaCount, updateCrewRelativeElevation }: { updateCrewTemperature: (index: number, temp: number) => void, updateCrewThesiaCount: (index: number, count: number) => void, updateCrewRelativeElevation: (index: number, elevation: number) => void }) {
+    const mapContainer = useRef<any>(null);
+    const map = useRef<mapboxgl.Map | null>(null);
+    const marker = useRef<mapboxgl.Marker | null>(null);
 
   useEffect(() => {
     if (map.current) return;
-  
+
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
     map.current = new mapboxgl.Map(mapboxConfig(mapContainer.current));
-  
+
     map.current.on('load', () => {
       setTimeout(() => {
-        loadCSVAndDrawPath(map.current!, marker.current, '/apt2.csv', '#ED7D31', 'route1', 'layer1', 55, 1, 0.8);
-        loadCSVAndDrawPath(map.current!, marker.current, '/apt4.1.csv', '#1E90FF', 'route2', 'layer2', 90, 1, 0.8);
-        loadCSVAndDrawPath(map.current!, marker.current, '/apt3.csv', '#FF0000', 'route3', 'layer3', 105, 0.9, 0.8);
+        loadCSVAndDrawPath(map.current!, marker.current, (temp) => updateCrewTemperature(0, temp), (temp) => updateCrewThesiaCount(0, temp), (temp) => updateCrewRelativeElevation(0, temp), '/apt2.csv', '#00FF00', 'route1', 'layer1', 55, 1, 0.8); // Green
+        loadCSVAndDrawPath(map.current!, marker.current, (temp) => updateCrewTemperature(1, temp), (temp) => updateCrewThesiaCount(1, temp), (temp) => updateCrewRelativeElevation(1, temp), '/apt4.1.csv', '#FFA500', 'route2', 'layer2', 90, 1, 0.8); // Orange
+        loadCSVAndDrawPath(map.current!, marker.current, (temp) => updateCrewTemperature(2, temp), (temp) => updateCrewThesiaCount(2, temp), (temp) => updateCrewRelativeElevation(2, temp), '/apt3.csv', '#800080', 'route3', 'layer3', 105, 0.9, 0.8); // Purple
       }, 3000);
     });
-  }, []);
+  }, [updateCrewTemperature, updateCrewThesiaCount, updateCrewRelativeElevation]);
 
   return <div ref={mapContainer} className="size-full" />;
 }
@@ -74,6 +74,9 @@ export function Map() {
 async function loadCSVAndDrawPath(
   map: mapboxgl.Map,
   marker: mapboxgl.Marker | null,
+  setTemperature: (temperature: number) => void,
+  setThesiaCount: (thesia_count: number) => void,
+  setRelativeElevation: (relative_elevation: number) => void,
   csvUrl: string,
   lineColor: string,
   sourceId: string,
@@ -117,23 +120,26 @@ async function loadCSVAndDrawPath(
 
   const pos_est_inertial_x: number[] = [];
   const pos_est_inertial_y: number[] = [];
+  const pos_est_inertial_z: number[] = [];
   const thesia_count: number[] = [];
+  const temperatures: number[] = [];
   let initial_lat: number | null = 0;
   let initial_lon: number | null = 0;
 
-  let count = 0;
   for (let i = 1; i < lines.length; i++) { // Start from 1 to skip the header line
 
     // Parse the CSV line
-    console.log(lines[i]);
+    // console.log(lines[i]);
     const line = lines[i];
     const row = line.split(',');
     const x = parseFloat(row[17]);
     const y = parseFloat(row[18]);
     const count = parseInt(row[12]);
+    temperatures.push(parseFloat(row[0])); // Assuming temperature is in the first column
     if (!isNaN(x) && !isNaN(y)) {
       pos_est_inertial_x.push(x);
       pos_est_inertial_y.push(y);
+      pos_est_inertial_z.push(parseFloat(row[19]));
       thesia_count.push(count);
     }
 
@@ -165,8 +171,14 @@ async function loadCSVAndDrawPath(
     const coord = [new_lon, new_lat];
     coordinates.push(coord);
 
-    await sleep(50);
+    await sleep(200);
 
+    // Update the dashboard
+    // Update the temperature with the last value in the temperatures array
+    setTemperature(temperatures[temperatures.length - 1]);
+    setThesiaCount(thesia_count[thesia_count.length - 1]);
+    setRelativeElevation(pos_est_inertial_z[pos_est_inertial_z.length - 1]);
+    
     const source = map.getSource(sourceId);
     if (source) {
       (source as mapboxgl.GeoJSONSource).setData({
@@ -192,45 +204,4 @@ async function loadCSVAndDrawPath(
     markerElement.style.backgroundColor = lineColor;
     new mapboxgl.Marker(markerElement).setLngLat([new_lon, new_lat]).addTo(map);
   }
-}
-
-function enablePathDragAndDrop(map: mapboxgl.Map, sourceId: string, layerId: string) {
-  let isDragging = false;
-  let draggedPointIndex = -1;
-
-  map.on('mousedown', layerId, (e) => {
-    if (!e.features || !e.features.length) return;
-    isDragging = true;
-    if (e.features[0].properties) {
-      draggedPointIndex = e.features[0].properties.index;
-    }
-    map.getCanvas().style.cursor = 'grab';
-  });
-
-  map.on('mousemove', (e) => {
-    if (!isDragging) return;
-    const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource;
-    const coordinates = (source as any)._data.geometry.coordinates;
-    coordinates[draggedPointIndex] = [e.lngLat.lng, e.lngLat.lat];
-    (map.getSource(sourceId) as mapboxgl.GeoJSONSource).setData({
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'LineString',
-        coordinates: coordinates,
-      },
-    });
-  });
-
-  map.on('mouseup', () => {
-    if (!isDragging) return;
-    isDragging = false;
-    map.getCanvas().style.cursor = '';
-  });
-
-  map.on('mouseleave', () => {
-    if (!isDragging) return;
-    isDragging = false;
-    map.getCanvas().style.cursor = '';
-  });
 }
