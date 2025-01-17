@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
 import { Crew } from '@/src/types/crew';
+import { useState } from 'react';
+
 import { CallDetails } from './call';
 import { CrewDetails } from './crew';
 import { Info } from './info';
@@ -17,9 +18,27 @@ export default function Dashboard() {
   };
 
   const initialCrewMembers: Crew[] = [
-    { name: 'Alex Forgosh', time: '0:0:0', temperature: 0, thesia_count: 0, relative_elevation: 0 },
-    { name: 'Russell Tan', time: '0:0:0', temperature: 0, thesia_count: 0, relative_elevation: 0 },
-    { name: 'Scott Susanto', time: '0:0:0', temperature: 0, thesia_count: 0, relative_elevation: 0 },
+    {
+      name: 'Alex Forgosh',
+      time: '0:0:0',
+      temperature: 0,
+      thesia_count: 0,
+      relative_elevation: 0,
+    },
+    {
+      name: 'Russell Tan',
+      time: '0:0:0',
+      temperature: 0,
+      thesia_count: 0,
+      relative_elevation: 0,
+    },
+    {
+      name: 'Scott Susanto',
+      time: '0:0:0',
+      temperature: 0,
+      thesia_count: 0,
+      relative_elevation: 0,
+    },
   ];
 
   const [crewMembers, setCrewMembers] = useState<Crew[]>(initialCrewMembers);
@@ -53,10 +72,19 @@ export default function Dashboard() {
       <div className="flex w-[37%] flex-col items-start gap-y-4">
         <Info />
         <CallDetails {...callDetails} />
-        <CrewDetails crewMembers={crewMembers} updateTemperature={updateCrewTemperature} updateThesiaCount={updateCrewThesiaCount} updateRelativeElevation={updateCrewRelativeElevation} />
+        <CrewDetails
+          crewMembers={crewMembers}
+          updateTemperature={updateCrewTemperature}
+          updateThesiaCount={updateCrewThesiaCount}
+          updateRelativeElevation={updateCrewRelativeElevation}
+        />
       </div>
       <div className="flex w-[63%] items-center justify-center rounded-lg bg-bg-gray-2 p-3">
-        <Map updateCrewTemperature={updateCrewTemperature} updateCrewThesiaCount={updateCrewThesiaCount} updateCrewRelativeElevation={updateCrewRelativeElevation} />
+        <Map
+          updateCrewTemperature={updateCrewTemperature}
+          updateCrewThesiaCount={updateCrewThesiaCount}
+          updateCrewRelativeElevation={updateCrewRelativeElevation}
+        />
       </div>
     </main>
   );
