@@ -2,47 +2,45 @@
 
 import { sleep } from '@/src/lib/utils';
 import { SatelliteIcon } from 'lucide-react';
-import mapboxgl, { MapOptions } from 'mapbox-gl';
-import { useEffect, useRef, useState } from 'react';
+import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
+import { MutableRefObject, useEffect, useRef, useState } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
-const earth_radius = 6378137; // Radius of the Earth in meters
-const degrees_per_meter = 1 / (earth_radius * (Math.PI / 180));
+const EARTH_RADIUS_METERS = 6_378_137;
+const DERGEES_PER_METER = 1 / (EARTH_RADIUS_METERS * (Math.PI / 180));
 
-function metersToDegrees(meters: number, atLatitude: number): number {
-  return (meters * degrees_per_meter) / Math.cos(atLatitude * (Math.PI / 180));
-}
-
-function calculateNewCoordinates(
-  posX: number,
-  posY: number,
-  initialLat: number,
-  initialLon: number,
-  rotationAngle: number,
-  shrinkFactorX: number,
-  shrinkFactorY: number,
-): [number, number] {
-  // Rotate the delta
-  const rotatedDx =
-    posX * Math.cos((Math.PI * rotationAngle) / 180) +
-    posY * Math.sin((Math.PI * rotationAngle) / 180);
-  const rotatedDy =
-    -posX * Math.sin((Math.PI * rotationAngle) / 180) +
-    posY * Math.cos((Math.PI * rotationAngle) / 180);
-
-  // Shrink the delta
-  const shrunkDx = rotatedDx * shrinkFactorX;
-  const shrunkDy = rotatedDy * shrinkFactorY;
-
-  // Convert displacement to degrees
-  const deltaLat = metersToDegrees(shrunkDy, initialLat);
-  const deltaLon = metersToDegrees(shrunkDx, initialLat);
-
-  // Calculate new coordinates
-  const newLat = initialLat + deltaLat;
-  const newLon = initialLon + deltaLon;
-
-  return [newLon, newLat];
-}
+const sampleData = [
+  {
+    initials: 'AF',
+    filename: '/apt2.csv',
+    color: '#5EC166',
+    route: 'route1',
+    layer: 'layer1',
+    rotationAngle: 55,
+    shrinkFactorX: 1,
+    shrinkFactorY: 0.8,
+  },
+  {
+    initials: 'RT',
+    filename: '/apt4.1.csv',
+    color: '#C1995D',
+    route: 'route2',
+    layer: 'layer2',
+    rotationAngle: 90,
+    shrinkFactorX: 1,
+    shrinkFactorY: 0.8,
+  },
+  {
+    initials: 'SS',
+    filename: '/apt3.csv',
+    color: '#B35FC1',
+    route: 'route3',
+    layer: 'layer3',
+    rotationAngle: 105,
+    shrinkFactorX: 0.9,
+    shrinkFactorY: 0.8,
+  },
+];
 
 const mapboxConfig = (ref: any) =>
   ({
@@ -64,7 +62,7 @@ export function Map({
 }) {
   const mapContainer = useRef<any>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const marker = useRef<mapboxgl.Marker | null>(null);
+  const markers = useRef<(mapboxgl.Marker | null)[]>([]);
 
   const [mapView, setMapView] = useState<'dark-v11' | 'satellite-v9'>(
     'dark-v11',
@@ -84,49 +82,34 @@ export function Map({
     map.current = new mapboxgl.Map(mapboxConfig(mapContainer.current));
 
     map.current.on('load', () => {
+      markers.current = Array(3).fill(null);
+
       setTimeout(() => {
-        loadCSVAndDrawPath(
-          map.current!,
-          marker.current,
-          (temp) => updateCrewTemperature(0, temp),
-          (temp) => updateCrewThesiaCount(0, temp),
-          (temp) => updateCrewRelativeElevation(0, temp),
-          '/apt2.csv',
-          '#00FF00',
-          'route1',
-          'layer1',
-          55,
-          1,
-          0.8,
-        ); // Green
-        loadCSVAndDrawPath(
-          map.current!,
-          marker.current,
-          (temp) => updateCrewTemperature(1, temp),
-          (temp) => updateCrewThesiaCount(1, temp),
-          (temp) => updateCrewRelativeElevation(1, temp),
-          '/apt4.1.csv',
-          '#FFA500',
-          'route2',
-          'layer2',
-          90,
-          1,
-          0.8,
-        ); // Orange
-        loadCSVAndDrawPath(
-          map.current!,
-          marker.current,
-          (temp) => updateCrewTemperature(2, temp),
-          (temp) => updateCrewThesiaCount(2, temp),
-          (temp) => updateCrewRelativeElevation(2, temp),
-          '/apt3.csv',
-          '#800080',
-          'route3',
-          'layer3',
-          105,
-          0.9,
-          0.8,
-        ); // Purple
+        sampleData.forEach((data, index) => {
+          loadCSVAndDrawPath({
+            index,
+            data: {
+              csvUrl: data.filename,
+              sourceId: data.route,
+              layerId: data.layer,
+              rotationAngle: data.rotationAngle,
+              shrinkFactorX: data.shrinkFactorX,
+              shrinkFactorY: data.shrinkFactorY,
+              initials: data.initials,
+            },
+            mapOpts: {
+              map: map.current!,
+              markers,
+              lineColor: data.color,
+            },
+            setters: {
+              setTemperature: (temp) => updateCrewTemperature(index, temp),
+              setThesiaCount: (count) => updateCrewThesiaCount(index, count),
+              setRelativeElevation: (elevation) =>
+                updateCrewRelativeElevation(index, elevation),
+            },
+          });
+        });
       }, 3000);
     });
   }, [
@@ -148,25 +131,50 @@ export function Map({
   );
 }
 
-async function loadCSVAndDrawPath(
-  map: mapboxgl.Map,
-  marker: mapboxgl.Marker | null,
-  setTemperature: (temperature: number) => void,
-  setThesiaCount: (thesia_count: number) => void,
-  setRelativeElevation: (relative_elevation: number) => void,
-  csvUrl: string,
-  lineColor: string,
-  sourceId: string,
-  layerId: string,
-  rotationAngle: number,
-  shrinkFactorX: number,
-  shrinkFactorY: number,
-) {
+async function loadCSVAndDrawPath({
+  index,
+  data,
+  mapOpts,
+  setters,
+}: {
+  index: number;
+  data: {
+    csvUrl: string;
+    sourceId: string;
+    layerId: string;
+    rotationAngle: number;
+    shrinkFactorX: number;
+    shrinkFactorY: number;
+    initials: string;
+  };
+  mapOpts: {
+    map: mapboxgl.Map;
+    markers: MutableRefObject<(mapboxgl.Marker | null)[]>;
+    lineColor: string;
+  };
+  setters: {
+    setTemperature: (temperature: number) => void;
+    setThesiaCount: (thesia_count: number) => void;
+    setRelativeElevation: (relative_elevation: number) => void;
+  };
+}) {
+  const {
+    csvUrl,
+    sourceId,
+    layerId,
+    rotationAngle,
+    shrinkFactorX,
+    shrinkFactorY,
+    initials,
+  } = data;
+  const { map, markers, lineColor } = mapOpts;
+  const { setTemperature, setThesiaCount, setRelativeElevation } = setters;
+
   const response = await fetch(csvUrl);
   const csvText = await response.text();
   const lines = csvText.trim().split('\n');
 
-  const coordinates: number[][] = [];
+  const coordinates: LngLatLike[] = [];
 
   map.addSource(sourceId, {
     type: 'geojson',
@@ -175,7 +183,7 @@ async function loadCSVAndDrawPath(
       properties: {},
       geometry: {
         type: 'LineString',
-        coordinates: coordinates,
+        coordinates: coordinates as number[][],
       },
     },
   });
@@ -203,9 +211,8 @@ async function loadCSVAndDrawPath(
   let initial_lat: number | null = 0;
   let initial_lon: number | null = 0;
 
+  // Start from 1 to skip the header line
   for (let i = 1; i < lines.length; i++) {
-    // Start from 1 to skip the header line
-
     // Parse the CSV line
     const line = lines[i];
     const row = line.split(',');
@@ -236,7 +243,7 @@ async function loadCSVAndDrawPath(
     let dx = -1 * pos_est_inertial_x[pos_est_inertial_x.length - 1];
     let dy = pos_est_inertial_y[pos_est_inertial_y.length - 1];
 
-    const [new_lon, new_lat] = calculateNewCoordinates(
+    const coords = calculateNewCoordinates(
       dx,
       dy,
       initial_lat,
@@ -245,13 +252,11 @@ async function loadCSVAndDrawPath(
       shrinkFactorX,
       shrinkFactorY,
     );
-    const coord = [new_lon, new_lat];
-    coordinates.push(coord);
+    coordinates.push(coords);
 
     await sleep(200);
 
     // Update the dashboard
-    // Update the temperature with the last value in the temperatures array
     setTemperature(temperatures[temperatures.length - 1]);
     setThesiaCount(thesia_count[thesia_count.length - 1]);
     setRelativeElevation(pos_est_inertial_z[pos_est_inertial_z.length - 1]);
@@ -263,17 +268,78 @@ async function loadCSVAndDrawPath(
         properties: {},
         geometry: {
           type: 'LineString',
-          coordinates: coordinates,
+          coordinates: coordinates as number[][],
         },
       });
     }
 
-    if (marker) {
-      marker.remove();
-    }
-    const markerElement = document.createElement('div');
-    markerElement.classList.add('marker', 'rounded-full', 'w-2', 'h-2');
-    markerElement.style.backgroundColor = lineColor;
-    new mapboxgl.Marker(markerElement).setLngLat([new_lon, new_lat]).addTo(map);
+    updateMarker({ initials, lngLat: coords as LngLatLike, markers });
   }
+
+  function calculateNewCoordinates(
+    posX: number,
+    posY: number,
+    initialLat: number,
+    initialLon: number,
+    rotationAngle: number,
+    shrinkFactorX: number,
+    shrinkFactorY: number,
+  ): LngLatLike {
+    const rotatedDx =
+      posX * Math.cos((Math.PI * rotationAngle) / 180) +
+      posY * Math.sin((Math.PI * rotationAngle) / 180);
+    const rotatedDy =
+      -posX * Math.sin((Math.PI * rotationAngle) / 180) +
+      posY * Math.cos((Math.PI * rotationAngle) / 180);
+
+    const shrunkDx = rotatedDx * shrinkFactorX;
+    const shrunkDy = rotatedDy * shrinkFactorY;
+
+    const deltaLat = metersToDegrees(shrunkDy, initialLat);
+    const deltaLon = metersToDegrees(shrunkDx, initialLat);
+
+    const newLat = initialLat + deltaLat;
+    const newLon = initialLon + deltaLon;
+
+    return [newLon, newLat];
+  }
+
+  function updateMarker({
+    initials,
+    lngLat,
+    markers,
+  }: {
+    initials: string;
+    lngLat: LngLatLike;
+    markers: MutableRefObject<(mapboxgl.Marker | null)[]>;
+  }) {
+    if (markers.current[index]) {
+      markers.current[index].remove();
+    }
+    const markerElement1 = (
+      <div
+        className="flex items-center justify-center rounded-full p-1"
+        style={{ backgroundColor: lineColor }}
+      >
+        <div className="z-10 flex items-center justify-center rounded-full bg-black/40 p-1">
+          <p className="mx-[0.125rem] rounded-full font-medium text-white">
+            {initials}
+          </p>
+        </div>
+      </div>
+    );
+
+    const staticElement = renderToStaticMarkup(markerElement1);
+    const markerElement = document.createElement('div');
+    markerElement.innerHTML = staticElement;
+
+    const mapboxMarker = new mapboxgl.Marker(markerElement)
+      .setLngLat(lngLat)
+      .addTo(map);
+    markers.current[index] = mapboxMarker;
+  }
+}
+
+function metersToDegrees(meters: number, atLatitude: number): number {
+  return (meters * DERGEES_PER_METER) / Math.cos(atLatitude * (Math.PI / 180));
 }
