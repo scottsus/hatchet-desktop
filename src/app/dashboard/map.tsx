@@ -1,7 +1,7 @@
 'use client';
 
 import { sleep } from '@/src/lib/utils';
-import { SatelliteIcon } from 'lucide-react';
+import { FootprintsIcon, SatelliteIcon } from 'lucide-react';
 import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
 import { MutableRefObject, useEffect, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -75,6 +75,21 @@ export function Map({
     }
   };
 
+  const toggleTrails = () => {
+    const layers = ['layer1', 'layer2', 'layer3'];
+    layers.forEach((layerId) => {
+      const layer = map.current?.getLayer(layerId);
+      if (layer) {
+        const isVisible = map.current?.getLayoutProperty(layerId, 'visibility');
+        map.current?.setLayoutProperty(
+          layerId,
+          'visibility',
+          isVisible === 'visible' ? 'none' : 'visible',
+        );
+      }
+    });
+  };
+
   useEffect(() => {
     if (map.current) return;
 
@@ -121,12 +136,20 @@ export function Map({
   return (
     <div className="size-full">
       <div ref={mapContainer} className="size-full" />
-      <button
-        className="absolute bottom-12 right-12 rounded-full bg-gray-700 p-2 hover:brightness-125"
-        onClick={toggleMapView}
-      >
-        <SatelliteIcon />
-      </button>
+      <div className="absolute bottom-12 right-12 flex gap-x-4">
+        <button
+          className="cursor-pointer rounded-full bg-gray-700 p-2 hover:brightness-125"
+          onClick={toggleMapView}
+        >
+          <SatelliteIcon />
+        </button>
+        <button
+          className="cursor-pointer rounded-full bg-gray-700 p-2 hover:brightness-125"
+          onClick={toggleTrails}
+        >
+          <FootprintsIcon />
+        </button>
+      </div>
     </div>
   );
 }
@@ -199,7 +222,7 @@ async function loadCSVAndDrawPath({
     paint: {
       'line-color': lineColor,
       'line-width': 2,
-      'line-dasharray': [2, 1], // [dash length, gap length]
+      'line-dasharray': [3, 2], // [dash length, gap length]
     },
   });
 
