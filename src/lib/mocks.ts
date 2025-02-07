@@ -1,5 +1,13 @@
 import { Team } from '../types/crew';
 
+export const mockedCallDetails = {
+  callType: 'Smoke Investigation',
+  location: '2180 Post St',
+  cross: 'Scott St & Sutter St',
+  units: ['ST26', 'M673', 'ST67'],
+  date: 'March 5, 2024 at 6:30:52 PM PST',
+};
+
 export const mockedTeams: Team[] = [
   {
     name: 'Unit 11',
@@ -15,6 +23,8 @@ export const mockedTeams: Team[] = [
         temperature: 0,
         thesia_count: 0,
         relative_elevation: 2,
+        sensorSrc: 'apt.csv',
+        sensorData: [],
       },
       {
         id: 'Engineer - Seat 1',
@@ -26,6 +36,8 @@ export const mockedTeams: Team[] = [
         temperature: 0,
         thesia_count: 0,
         relative_elevation: 2,
+        sensorSrc: 'apt2.csv',
+        sensorData: [],
       },
       {
         id: 'ForcibleEntry - Seat 2',
@@ -37,6 +49,8 @@ export const mockedTeams: Team[] = [
         temperature: 0,
         thesia_count: 0,
         relative_elevation: 2,
+        sensorSrc: 'apt3.csv',
+        sensorData: [],
       },
     ],
   },
@@ -54,6 +68,8 @@ export const mockedTeams: Team[] = [
         temperature: 0,
         thesia_count: 0,
         relative_elevation: 3,
+        sensorSrc: 'level.csv',
+        sensorData: [],
       },
       {
         id: 'RIT - Seat 3',
@@ -65,6 +81,8 @@ export const mockedTeams: Team[] = [
         temperature: 0,
         thesia_count: 0,
         relative_elevation: 1,
+        sensorSrc: 'level4.csv',
+        sensorData: [],
       },
       // {
       //   id: 'Extrication - Seat 4',
@@ -76,6 +94,8 @@ export const mockedTeams: Team[] = [
       //   temperature: 0,
       //   thesia_count: 0,
       //   relative_elevation: 1,
+      // sensorSrc: 'apt.csv',
+      //   sensorData: [],
       // },
       {
         id: 'Lieutenant - Seat 1',
@@ -87,7 +107,19 @@ export const mockedTeams: Team[] = [
         temperature: 0,
         thesia_count: 0,
         relative_elevation: 1,
+        sensorSrc: 'level5.csv',
+        sensorData: [],
       },
     ],
   },
+];
+
+export const mockDataSources = [
+  'apt.csv',
+  'apt2.csv',
+  'apt3.csv',
+  'apt4.1.csv',
+  'level.csv',
+  'level4.csv',
+  'level5.csv',
 ];

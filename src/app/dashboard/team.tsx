@@ -102,7 +102,7 @@ export function Teams(
               onDragEnd={onDragEnd}
             > */}
             {teams.map((team, idx) => (
-              <Team name={team.name} crew={team.crew} />
+              <Team key={idx} name={team.name} crew={team.crew} />
             ))}
             {/* </DndContext> */}
           </div>

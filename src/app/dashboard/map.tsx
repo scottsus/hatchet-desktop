@@ -82,15 +82,7 @@ const mapboxConfig = (ref: any) =>
     attributionControl: false,
   }) as MapOptions;
 
-export function Map({
-  updateCrewTemperature,
-  updateCrewThesiaCount,
-  updateCrewRelativeElevation,
-}: {
-  updateCrewTemperature: (index: number, temp: number) => void;
-  updateCrewThesiaCount: (index: number, count: number) => void;
-  updateCrewRelativeElevation: (index: number, elevation: number) => void;
-}) {
+export function Map({}: {}) {
   const mapContainer = useRef<any>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<(mapboxgl.Marker | null)[]>([]);
@@ -148,21 +140,11 @@ export function Map({
               markers,
               lineColor: data.color,
             },
-            setters: {
-              setTemperature: (temp) => updateCrewTemperature(index, temp),
-              setThesiaCount: (count) => updateCrewThesiaCount(index, count),
-              setRelativeElevation: (elevation) =>
-                updateCrewRelativeElevation(index, elevation),
-            },
           });
         });
       }, 3000);
     });
-  }, [
-    updateCrewTemperature,
-    updateCrewThesiaCount,
-    updateCrewRelativeElevation,
-  ]);
+  }, []);
 
   return (
     <div className="relative size-full">
@@ -189,7 +171,6 @@ async function loadCSVAndDrawPath({
   index,
   data,
   mapOpts,
-  setters,
 }: {
   index: number;
   data: {
@@ -206,11 +187,6 @@ async function loadCSVAndDrawPath({
     markers: MutableRefObject<(mapboxgl.Marker | null)[]>;
     lineColor: string;
   };
-  setters: {
-    setTemperature: (temperature: number) => void;
-    setThesiaCount: (thesia_count: number) => void;
-    setRelativeElevation: (relative_elevation: number) => void;
-  };
 }) {
   const {
     csvUrl,
@@ -222,7 +198,6 @@ async function loadCSVAndDrawPath({
     initials,
   } = data;
   const { map, markers, lineColor } = mapOpts;
-  const { setTemperature, setThesiaCount, setRelativeElevation } = setters;
 
   const response = await fetch(csvUrl);
   const csvText = await response.text();
@@ -309,11 +284,6 @@ async function loadCSVAndDrawPath({
     coordinates.push(coords);
 
     await sleep(200);
-
-    // Update the dashboard
-    setTemperature(temperatures[temperatures.length - 1]);
-    setThesiaCount(thesia_count[thesia_count.length - 1]);
-    setRelativeElevation(pos_est_inertial_z[pos_est_inertial_z.length - 1]);
 
     const source = map.getSource(sourceId);
     if (source) {

@@ -1,14 +1,15 @@
 import { FireFighterCircle } from '@/src/components/ff-circle';
-import { mockedTeams } from '@/src/lib/mocks';
 import { cn } from '@/src/lib/utils';
 import { CrewMember } from '@/src/types/crew';
 import { LockIcon, UsersIcon } from 'lucide-react';
 import { useCallback } from 'react';
 
+import { useFireground } from '../providers/fireground';
+
 const TOPMOST_FLOOR = 4;
 
 export function Elevation() {
-  const teams = mockedTeams;
+  const { teams } = useFireground();
 
   const getCrewOnLevels = useCallback(() => {
     const crewByLevel: { [level: string]: CrewMember[] } = {
@@ -19,8 +20,10 @@ export function Elevation() {
 
     teams.forEach((team) => {
       team.crew.forEach((member) => {
-        const level = member.relative_elevation;
-        crewByLevel[level].push(member);
+        const level = member.sensorData[member.sensorData.length - 1]?.Altitude;
+        if (level) {
+          crewByLevel[Math.floor((level % 3) + 1)]?.push(member);
+        }
       });
     });
 
@@ -107,7 +110,11 @@ function FloorLevel({
 
       <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-x-2">
         {crew.map((member) => (
-          <FireFighterCircle initials={member.initials} color={member.color} />
+          <FireFighterCircle
+            key={member.id}
+            initials={member.initials}
+            color={member.color}
+          />
         ))}
       </div>
 

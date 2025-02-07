@@ -1,3 +1,5 @@
+import { SensorData } from './sensor-data';
+
 export interface CrewMember {
   id: string;
   name: string;
@@ -8,6 +10,8 @@ export interface CrewMember {
   temperature: number;
   thesia_count: number;
   relative_elevation: number;
+  sensorSrc: string;
+  sensorData: SensorData[];
 }
 
 export interface Team {
