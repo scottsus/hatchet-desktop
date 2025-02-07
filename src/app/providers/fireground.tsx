@@ -35,7 +35,7 @@ export function FiregroundProvider({
         crew: team.crew.map((m) =>
           m === member ? { ...m, sensorData: data } : m,
         ),
-      })),
+      }))
     );
   }
 
@@ -44,7 +44,7 @@ export function FiregroundProvider({
      * mocks process of streaming data in realtime
      */
     async function loadSingularDataSource(dataSrc: string) {
-      const INTERVAL = 100;
+      const INTERVAL = 400;
 
       const filename = dataSrc;
       const res = await fetch(filename);
@@ -54,15 +54,18 @@ export function FiregroundProvider({
 
       let i = 0;
       const interval = setInterval(() => {
-        if (i < rows.length) {
-          const target = teams
-            .flatMap((team) => team.crew)
-            .find((m) => m.sensorSrc === dataSrc);
-          if (target) {
-            updateSensorData(target, [...target.sensorData, rows[i]]);
+        setTeams((prevTeams) => {
+          if (i < rows.length) {
+            const target = prevTeams
+              .flatMap((team) => team.crew)
+              .find((m) => m.sensorSrc === dataSrc);
+            if (target) {
+              updateSensorData(target, [...target.sensorData, rows[i]]);
+            }
+            i++;
           }
-          i++;
-        }
+          return prevTeams;
+        });
       }, INTERVAL);
 
       return () => clearInterval(interval);
