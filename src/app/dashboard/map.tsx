@@ -17,7 +17,7 @@ const sampleData = [
     color: '#3880A9',
     route: 'route1',
     layer: 'layer1',
-    rotationAngle: 55,
+    rotationAngle: 35,
     shrinkFactorX: 1,
     shrinkFactorY: 0.8,
   },
@@ -27,7 +27,7 @@ const sampleData = [
     color: '#3880A9',
     route: 'route2',
     layer: 'layer2',
-    rotationAngle: 90,
+    rotationAngle: 0,
     shrinkFactorX: 1,
     shrinkFactorY: 0.8,
   },
@@ -37,7 +37,7 @@ const sampleData = [
     color: '#3880A9',
     route: 'route3',
     layer: 'layer3',
-    rotationAngle: 105,
+    rotationAngle: -15,
     shrinkFactorX: 0.9,
     shrinkFactorY: 0.8,
   },
@@ -47,7 +47,7 @@ const sampleData = [
     color: '#9259A0',
     route: 'route4',
     layer: 'layer4',
-    rotationAngle: -120, // 55
+    rotationAngle: -120,
     shrinkFactorX: 1,
     shrinkFactorY: 0.8,
   },
@@ -57,7 +57,7 @@ const sampleData = [
     color: '#AE8C5A',
     route: 'route5',
     layer: 'layer5',
-    rotationAngle: 185, // 90
+    rotationAngle: 185,
     shrinkFactorX: 1,
     shrinkFactorY: 0.8,
   },
@@ -67,7 +67,7 @@ const sampleData = [
     color: '#AE8C5A',
     route: 'route6',
     layer: 'layer6',
-    rotationAngle: 165, // 105
+    rotationAngle: 165,
     shrinkFactorX: 1,
     shrinkFactorY: 0.8,
   },
@@ -269,8 +269,8 @@ async function loadCSVAndDrawPath({
       continue;
     }
 
-    let dx = -1 * pos_est_inertial_x[pos_est_inertial_x.length - 1];
-    let dy = pos_est_inertial_y[pos_est_inertial_y.length - 1];
+    let dx = pos_est_inertial_y[pos_est_inertial_y.length - 1];
+    let dy = pos_est_inertial_x[pos_est_inertial_x.length - 1];
 
     const coords = calculateNewCoordinates(
       dx,
@@ -309,25 +309,37 @@ async function loadCSVAndDrawPath({
     shrinkFactorX: number,
     shrinkFactorY: number,
   ): LngLatLike {
-    const rotatedDx =
-      posX * Math.cos((Math.PI * rotationAngle) / 180) +
-      posY * Math.sin((Math.PI * rotationAngle) / 180);
-    const rotatedDy =
-      -posX * Math.sin((Math.PI * rotationAngle) / 180) +
-      posY * Math.cos((Math.PI * rotationAngle) / 180);
+  // Rotate the offset coordinates by the north alignment angle in degrees
+  const rotatedDx =
+    posX * Math.cos((Math.PI * rotationAngle) / 180) -
+    posY * Math.sin((Math.PI * rotationAngle) / 180);
+  const rotatedDy =
+    posX * Math.sin((Math.PI * rotationAngle) / 180) +
+    posY * Math.cos((Math.PI * rotationAngle) / 180);
 
-    const shrunkDx = rotatedDx * shrinkFactorX;
-    const shrunkDy = rotatedDy * shrinkFactorY;
+  // // Rotate the offset coordinates by the north orientation correction angle in radian
+  // const rotatedDx =
+  //   posX * Math.cos(rotationAngle) - posY * Math.sin(rotationAngle);
+  // const rotatedDy =
+  //   posX * Math.sin(rotationAngle) + posY * Math.cos(rotationAngle);
 
-    const deltaLat = metersToDegrees(shrunkDy, initialLat);
-    const deltaLon = metersToDegrees(shrunkDx, initialLat);
+  // rotatedDx an dy but input was radians
+  console.log(data.initials,((180 * rotationAngle) / Math.PI));
 
-    const newLat = initialLat + deltaLat;
-    const newLon = initialLon + deltaLon;
+  // Apply shrink factors
+  const shrunkDx = rotatedDx * shrinkFactorX;
+  const shrunkDy = rotatedDy * shrinkFactorY;
+
+  // Convert the rotated offsets from meters to degrees
+  const deltaLat = metersToDegrees(shrunkDy, initialLat);
+  const deltaLon = metersToDegrees(shrunkDx, initialLat);
+
+  // Add the converted offsets to the starting point latitude and longitude
+  const newLat = initialLat + deltaLat;
+  const newLon = initialLon + deltaLon;
 
     return [newLon, newLat];
   }
-
   function updateMarker({
     initials,
     lngLat,
