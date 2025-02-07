@@ -18,8 +18,8 @@ const sampleData = [
     route: 'route1',
     layer: 'layer1',
     rotationAngle: 35,
-    shrinkFactorX: 1,
-    shrinkFactorY: 0.8,
+    shrinkFactorX: 1.1,
+    shrinkFactorY: 0.75,
   },
   {
     initials: 'RT',
@@ -323,8 +323,8 @@ async function loadCSVAndDrawPath({
   // const rotatedDy =
   //   posX * Math.sin(rotationAngle) + posY * Math.cos(rotationAngle);
 
-  // rotatedDx an dy but input was radians
-  console.log(data.initials,((180 * rotationAngle) / Math.PI));
+  // // rotatedDx an dy but input was radians
+  // console.log(data.initials,((180 * rotationAngle) / Math.PI));
 
   // Apply shrink factors
   const shrunkDx = rotatedDx * shrinkFactorX;
