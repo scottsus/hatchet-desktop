@@ -1,7 +1,8 @@
 'use client';
 
+import { FireFighterCircle } from '@/src/components/ff-circle';
 import { sleep } from '@/src/lib/utils';
-import { FootprintsIcon, SatelliteIcon } from 'lucide-react';
+import { RouteIcon, SatelliteIcon } from 'lucide-react';
 import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
 import { MutableRefObject, useEffect, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -13,7 +14,7 @@ const sampleData = [
   {
     initials: 'AF',
     filename: '/apt2.csv',
-    color: '#5EC166',
+    color: '#3880A9',
     route: 'route1',
     layer: 'layer1',
     rotationAngle: 55,
@@ -23,7 +24,7 @@ const sampleData = [
   {
     initials: 'RT',
     filename: '/apt4.1.csv',
-    color: '#C1995D',
+    color: '#3880A9',
     route: 'route2',
     layer: 'layer2',
     rotationAngle: 90,
@@ -31,13 +32,43 @@ const sampleData = [
     shrinkFactorY: 0.8,
   },
   {
-    initials: 'SS',
+    initials: 'DL',
     filename: '/apt3.csv',
-    color: '#B35FC1',
+    color: '#3880A9',
     route: 'route3',
     layer: 'layer3',
     rotationAngle: 105,
     shrinkFactorX: 0.9,
+    shrinkFactorY: 0.8,
+  },
+  {
+    initials: 'SS',
+    filename: '/level.csv',
+    color: '#9259A0',
+    route: 'route4',
+    layer: 'layer4',
+    rotationAngle: -120, // 55
+    shrinkFactorX: 1,
+    shrinkFactorY: 0.8,
+  },
+  {
+    initials: 'AA',
+    filename: '/level4.csv',
+    color: '#AE8C5A',
+    route: 'route5',
+    layer: 'layer5',
+    rotationAngle: 185, // 90
+    shrinkFactorX: 1,
+    shrinkFactorY: 0.8,
+  },
+  {
+    initials: 'AC',
+    filename: '/level5.csv',
+    color: '#AE8C5A',
+    route: 'route6',
+    layer: 'layer6',
+    rotationAngle: 165, // 105
+    shrinkFactorX: 1,
     shrinkFactorY: 0.8,
   },
 ];
@@ -134,9 +165,9 @@ export function Map({
   ]);
 
   return (
-    <div className="size-full">
+    <div className="relative size-full">
       <div ref={mapContainer} className="size-full" />
-      <div className="absolute bottom-12 right-12 flex gap-x-4">
+      <div className="absolute bottom-4 right-5 flex gap-x-4">
         <button
           className="cursor-pointer rounded-full bg-gray-700 p-2 hover:brightness-125"
           onClick={toggleMapView}
@@ -147,7 +178,7 @@ export function Map({
           className="cursor-pointer rounded-full bg-gray-700 p-2 hover:brightness-125"
           onClick={toggleTrails}
         >
-          <FootprintsIcon />
+          <RouteIcon />
         </button>
       </div>
     </div>
@@ -340,18 +371,8 @@ async function loadCSVAndDrawPath({
       markers.current[index].remove();
     }
     const markerElement1 = (
-      <div
-        className="flex items-center justify-center rounded-full p-1"
-        style={{ backgroundColor: lineColor }}
-      >
-        <div className="z-10 flex items-center justify-center rounded-full bg-black/40 p-1">
-          <p className="mx-[0.125rem] rounded-full font-medium text-white">
-            {initials}
-          </p>
-        </div>
-      </div>
+      <FireFighterCircle color={lineColor} initials={initials} />
     );
-
     const staticElement = renderToStaticMarkup(markerElement1);
     const markerElement = document.createElement('div');
     markerElement.innerHTML = staticElement;

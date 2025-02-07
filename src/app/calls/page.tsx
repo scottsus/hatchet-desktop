@@ -13,6 +13,24 @@ const calls = [
     time: '2:08pm',
     date: '5/22',
   },
+  {
+    callType: 'F Structure Fire',
+    address: '789 Main Street',
+    time: '11:45am',
+    date: '5/22',
+  },
+  {
+    callType: 'F Vehicle Fire',
+    address: '456 Oak Avenue',
+    time: '3:30pm',
+    date: '5/22',
+  },
+  {
+    callType: 'F Medical Emergency',
+    address: '123 Elm Road',
+    time: '9:15pm',
+    date: '5/22',
+  },
 ];
 
 export default function CallsPage() {

@@ -22,6 +22,9 @@ const config: Config = {
           5: '#CBCBCB',
         },
       },
+      border: {
+        default: '#4A4A4A',
+      },
       text: {
         default: '#FFFFFF',
         muted: '#FFFFFFB2',

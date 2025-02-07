@@ -23,7 +23,7 @@ export function Sidebar() {
           <Link key={item.title} href={item.href}>
             <button
               className={cn(
-                'cursor-pointer rounded-sm border p-2 transition-all hover:border-white hover:text-white',
+                'cursor-pointer rounded border p-2 transition-all hover:border-white hover:text-white',
                 item.isActive
                   ? 'border-primary bg-primary/20 text-primary'
                   : 'border-bg-gray-5 text-bg-gray-5',
