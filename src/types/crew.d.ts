@@ -7,9 +7,9 @@ export interface CrewMember {
   color: string;
   time: string;
   signalStrength: 'low' | 'med' | 'high';
-  temperature: number;
-  thesia_count: number;
-  relative_elevation: number;
+  temperature: number; // deprecated soon
+  thesia_count: number; // deprecated soon
+  relative_elevation: number; // deprecated soon
   sensorSrc: string;
   sensorData: SensorData[];
 }
