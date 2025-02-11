@@ -39,6 +39,7 @@ export function Elevation() {
     <div className="flex h-full w-full flex-col items-start rounded-md bg-bg-gray-2 p-4">
       <div className="flex w-full items-center gap-x-3">
         <h1>Elevation</h1>
+        <p>Len: {teams[0].crew[0].sensorData.length}</p>
         <hr className="flex-1 border-bg-gray-3" />
         <LockIcon size={14} />
       </div>
