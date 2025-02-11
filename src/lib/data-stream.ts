@@ -28,6 +28,7 @@ export async function startMockedLoadDataAndStartStreaming() {
       return acc;
     }, []);
     if (nonEmptyQueueIndices.length === 0) {
+      console.log('done');
       break;
     }
 
