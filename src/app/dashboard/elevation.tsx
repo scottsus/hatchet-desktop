@@ -20,9 +20,13 @@ export function Elevation() {
 
     teams.forEach((team) => {
       team.crew.forEach((member) => {
-        const level = member.sensorData[member.sensorData.length - 1]?.Altitude;
-        if (level) {
-          crewByLevel[Math.floor((level % 3) + 1)]?.push(member);
+        const altitude = Number(member.sensorData[member.sensorData.length - 1]?.['Altitude Estimation Pressometer']);
+        const position = Number(member.sensorData[member.sensorData.length - 1]?.['Position Estimation Inertial Z']);
+        if (!isNaN(altitude) && !isNaN(position)) {
+          const level = -((altitude + position) / 2);
+          console.log(level);
+          const floor = Math.min(Math.max(Math.ceil(level / 50), 1), 3);
+          crewByLevel[floor]?.push(member);
         }
       });
     });
