@@ -114,7 +114,7 @@ export const mockedTeams: Team[] = [
   },
 ];
 
-export const mockedDataSources = [
+export const mockDataSources = [
   'apt.csv',
   'apt2.csv',
   'apt3.csv',

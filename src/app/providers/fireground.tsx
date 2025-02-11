@@ -1,24 +1,19 @@
+import { clearInterval } from 'timers';
 import {
-  sensorDataQueue,
-  startMockedLoadDataAndStartStreaming,
-} from '@/src/lib/data-stream';
-import { mockedCallDetails, mockedTeams } from '@/src/lib/mocks';
+  mockDataSources,
+  mockedCallDetails,
+  mockedTeams,
+} from '@/src/lib/mocks';
 import { CrewMember, Team } from '@/src/types/crew';
-import { SensorData, SensorDataWithCrew } from '@/src/types/sensor-data';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { SensorData } from '@/src/types/sensor-data';
+import Papa from 'papaparse';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 import { CallDetails } from '../dashboard/call';
 
 type FiregroundContextType = {
   callDetails: CallDetails;
   teams: Team[];
-  getLatestSensorDataWithCrew: () => SensorDataWithCrew | null;
 };
 
 const FiregroundContext = createContext<FiregroundContextType | undefined>(
@@ -33,52 +28,52 @@ export function FiregroundProvider({
   const callDetails = mockedCallDetails;
   const initialTeams = mockedTeams;
   const [teams, setTeams] = useState<Team[]>(initialTeams);
-  const [latestSensorData, setLatestSensorDataWithCrew] =
-    useState<SensorDataWithCrew | null>(null);
-
-  function updateSensorData(member: CrewMember, newData: SensorData) {
+  function updateSensorData(member: CrewMember, data: SensorData[]) {
     setTeams((prev) =>
       prev.map((team) => ({
         ...team,
         crew: team.crew.map((m) =>
-          m === member ? { ...m, sensorData: [...m.sensorData, newData] } : m,
+          m === member ? { ...m, sensorData: data } : m,
         ),
       })),
     );
   }
 
-  const getLatestSensorDataWithCrew = useCallback(
-    () => latestSensorData,
-    [latestSensorData],
-  );
-
   useEffect(() => {
-    startMockedLoadDataAndStartStreaming();
+    /**
+     * mocks process of streaming data in realtime
+     */
+    async function loadSingularDataSource(dataSrc: string) {
+      const INTERVAL = 100;
 
-    const DELAY = 100;
-    const interval = setInterval(() => {
-      if (sensorDataQueue.length > 0) {
-        const sensorData = sensorDataQueue.shift();
-        const targetCrewMember = teams
-          .flatMap((team) => team.crew)
-          .find((m) => m.sensorSrc === sensorData?.id);
-        if (targetCrewMember && sensorData) {
-          updateSensorData(targetCrewMember, sensorData);
-          setLatestSensorDataWithCrew({
-            crewMember: targetCrewMember,
-            sensorData,
-          });
+      const filename = dataSrc;
+      const res = await fetch(filename);
+      const csv = await res.text();
+      const data = Papa.parse<SensorData>(csv, { header: true });
+      const rows = data.data;
+
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < rows.length) {
+          const target = teams
+            .flatMap((team) => team.crew)
+            .find((m) => m.sensorSrc === dataSrc);
+          if (target) {
+            updateSensorData(target, [...target.sensorData, rows[i]]);
+          }
+          i++;
         }
-      }
-    }, DELAY);
+      }, INTERVAL);
 
-    return () => clearInterval(interval);
+      return () => clearInterval(interval);
+    }
+
+    const dataSources = mockDataSources;
+    dataSources.forEach(loadSingularDataSource);
   }, []);
 
   return (
-    <FiregroundContext.Provider
-      value={{ callDetails, teams, getLatestSensorDataWithCrew }}
-    >
+    <FiregroundContext.Provider value={{ callDetails, teams }}>
       {children}
     </FiregroundContext.Provider>
   );

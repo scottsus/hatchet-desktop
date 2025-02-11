@@ -1,10 +1,3 @@
-import { CrewMember } from './crew';
-
-export type SensorDataWithId = SensorData & { id: string };
-export type SensorDataWithCrew = {
-  sensorData: SensorData;
-  crewMember: CrewMember;
-};
 export type SensorData = {
   Temperature: number;
   Pressure: number;
