@@ -196,6 +196,7 @@ export function Map({}: {}) {
       prev: sensorData,
       data: sensorData,
     });
+    console.log('recalculated:', coordinates);
 
     if (!coordinatesRef.current[crewMember.id]) {
       coordinatesRef.current[crewMember.id] = [];

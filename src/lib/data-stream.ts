@@ -15,7 +15,10 @@ export async function startMockedLoadDataAndStartStreaming() {
       const filename = dataSource;
       const res = await fetch(filename);
       const csv = await res.text();
-      const data = Papa.parse<SensorData>(csv, { header: true });
+      const data = Papa.parse<SensorData>(csv, {
+        header: true,
+        dynamicTyping: true,
+      });
       return data.data;
     }),
   );
