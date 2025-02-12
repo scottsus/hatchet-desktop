@@ -1,14 +1,14 @@
 import Papa from 'papaparse';
 
 import { INTERVAL } from '../env';
-import { SensorData, SensorDataWithId } from '../types/sensor-data';
+import { SensorData } from '../types/sensor-data';
 import { mockedDataSources } from './mocks';
+import { SensorDataBuffer } from './sensor-data-buffer';
 import { sleep } from './utils';
-
-export const sensorDataQueue: SensorDataWithId[] = [];
 
 export async function startMockedLoadDataAndStartStreaming() {
   const dataSources = mockedDataSources;
+  const sensorDataBuffer = SensorDataBuffer.getInstance();
 
   const allCrews: SensorData[][] = await Promise.all(
     dataSources.map(async (dataSource) => {
@@ -44,9 +44,12 @@ export async function startMockedLoadDataAndStartStreaming() {
     if (!sensorData) {
       continue;
     }
-    sensorDataQueue.push({ ...sensorData!, id: dataSources[crewMemberIdx] });
+    await sensorDataBuffer.push({
+      ...sensorData!,
+      id: dataSources[crewMemberIdx],
+    });
 
-    // @TODO: add lock
-    // await sleep(INTERVAL);
+    // Ensure data is produced at the same rate it's consumed
+    await sleep(INTERVAL);
   }
 }

@@ -1,9 +1,7 @@
 import { INTERVAL } from '@/src/env';
-import {
-  sensorDataQueue,
-  startMockedLoadDataAndStartStreaming,
-} from '@/src/lib/data-stream';
+import { startMockedLoadDataAndStartStreaming } from '@/src/lib/data-stream';
 import { mockedCallDetails, mockedTeams } from '@/src/lib/mocks';
+import { SensorDataBuffer } from '@/src/lib/sensor-data-buffer';
 import { CrewMember, Team } from '@/src/types/crew';
 import { SensorData, SensorDataWithCrew } from '@/src/types/sensor-data';
 import {
@@ -56,9 +54,10 @@ export function FiregroundProvider({
   useEffect(() => {
     startMockedLoadDataAndStartStreaming();
 
-    const interval = setInterval(() => {
-      if (sensorDataQueue.length > 0) {
-        const sensorData = sensorDataQueue.shift();
+    const sensorDataBuffer = SensorDataBuffer.getInstance();
+    const interval = setInterval(async () => {
+      if (!(await sensorDataBuffer.empty())) {
+        const sensorData = await sensorDataBuffer.pop();
         const targetCrewMember = teams
           .flatMap((team) => team.crew)
           .find((m) => m.sensorSrc === sensorData?.id);
