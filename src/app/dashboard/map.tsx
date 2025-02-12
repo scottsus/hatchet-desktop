@@ -192,13 +192,17 @@ export function Map({}: {}) {
     }
 
     const { sensorData, crewMember } = sensorDataWithCrew;
-    // console.log('raw:', [sensorData.Longitude, sensorData.Latitude]);
     const { coordinates } = calcCoordinates({
-      prev: sensorData,
       data: sensorData,
       calibrationOpts: crewMember.calibrationOpts,
     });
-    // console.log('new:', coordinates);
+    if (
+      Array.isArray(coordinates) &&
+      coordinates[0] === 0 &&
+      coordinates[1] === 0
+    ) {
+      return;
+    }
 
     // 👣 render path
     if (!coordinatesRef.current[crewMember.id]) {

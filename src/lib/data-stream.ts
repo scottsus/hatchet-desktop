@@ -10,7 +10,7 @@ export const sensorDataQueue: SensorDataWithId[] = [];
 export async function startMockedLoadDataAndStartStreaming() {
   const dataSources = mockedDataSources;
 
-  const allRows: SensorData[][] = await Promise.all(
+  const allCrews: SensorData[][] = await Promise.all(
     dataSources.map(async (dataSource) => {
       const filename = dataSource;
       const res = await fetch(filename);
@@ -24,25 +24,29 @@ export async function startMockedLoadDataAndStartStreaming() {
   );
 
   while (true) {
-    const nonEmptyQueueIndices = allRows.reduce((acc: number[], queue, idx) => {
-      if (queue.length > 0) {
-        acc.push(idx);
-      }
-      return acc;
-    }, []);
+    const nonEmptyQueueIndices = allCrews.reduce(
+      (acc: number[], member, idx) => {
+        if (member.length > 0) {
+          acc.push(idx);
+        }
+        return acc;
+      },
+      [],
+    );
     if (nonEmptyQueueIndices.length === 0) {
       break;
     }
 
-    const idx = Math.floor(Math.random() * nonEmptyQueueIndices.length);
-    const randomQueueIdx = nonEmptyQueueIndices[idx];
-    const queue = allRows[randomQueueIdx];
-    const randomRow = queue.shift();
-    if (!randomRow) {
+    const randomIdx = Math.floor(Math.random() * nonEmptyQueueIndices.length);
+    const crewMemberIdx = nonEmptyQueueIndices[randomIdx];
+    const crewMember = allCrews[crewMemberIdx];
+    const sensorData = crewMember.shift();
+    if (!sensorData) {
       continue;
     }
-    sensorDataQueue.push({ ...randomRow!, id: dataSources[randomQueueIdx] });
+    sensorDataQueue.push({ ...sensorData!, id: dataSources[crewMemberIdx] });
 
-    await sleep(INTERVAL);
+    // @TODO: add lock
+    // await sleep(INTERVAL);
   }
 }

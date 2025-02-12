@@ -10,16 +10,12 @@ let initialLon = 0;
 let initialLat = 0;
 
 export function calcCoordinates({
-  prev,
   data,
   calibrationOpts,
 }: {
-  prev: SensorData;
   data: SensorData;
   calibrationOpts?: CalibrationOpts;
 }) {
-  console.log(initialLon, initialLat);
-
   const count = data['Message Counter'];
   const temperature = data.Temperature;
 
@@ -48,34 +44,6 @@ export function calcCoordinates({
   );
 
   return { count, temperature, x, y, coordinates };
-}
-
-function initializeCheckLonLat({
-  initialLon,
-  initialLat,
-  lon,
-  lat,
-  count,
-}: {
-  initialLon: number;
-  initialLat: number;
-  lon: number;
-  lat: number;
-  count: number;
-}) {
-  if (initialLon !== 0 || initialLat !== 0) {
-    return [initialLon, initialLat];
-  }
-
-  if (count === 0) {
-    return [0, 0];
-  }
-
-  if (isNaN(lat) || isNaN(lon)) {
-    return [0, 0];
-  }
-
-  return [lon, lat];
 }
 
 function recalcCoordinates(
@@ -110,4 +78,32 @@ function recalcCoordinates(
 
 function metersToDegrees(meters: number, atLatitude: number): number {
   return (meters * DERGEES_PER_METER) / Math.cos(atLatitude * (Math.PI / 180));
+}
+
+function initializeCheckLonLat({
+  initialLon,
+  initialLat,
+  lon,
+  lat,
+  count,
+}: {
+  initialLon: number;
+  initialLat: number;
+  lon: number;
+  lat: number;
+  count: number;
+}) {
+  if (initialLon !== 0 || initialLat !== 0) {
+    return [initialLon, initialLat];
+  }
+
+  if (count === 0) {
+    return [0, 0];
+  }
+
+  if (isNaN(lat) || isNaN(lon)) {
+    return [0, 0];
+  }
+
+  return [lon, lat];
 }

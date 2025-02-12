@@ -1,4 +1,4 @@
-export const INTERVAL = 1; // 100ms
+export const INTERVAL = 10; // 10ms
 
 export const IS_DEMO = process.env.DEV === 'scottsus' ? false : true;
 
