@@ -50,11 +50,11 @@ export function Map({}: {}) {
   const toggleTrails = () => {
     const layers = [
       'layer_1',
-      'layer_2',
-      'layer_3',
-      'layer_4',
-      'layer_5',
-      'layer_6',
+      // 'layer_2',
+      // 'layer_3',
+      // 'layer_4',
+      // 'layer_5',
+      // 'layer_6',
     ];
     layers.forEach((layerId) => {
       const layer = mapRef.current?.getLayer(layerId);
@@ -175,8 +175,8 @@ export function Map({}: {}) {
     mapRef.current.on('load', () => {
       mapData.forEach((member) => {
         initializePath({
-          routeId: `route_${member.id}`,
-          layerId: `layer_${member.id}`,
+          routeId: member.route,
+          layerId: member.layer,
           color: member.color,
           coordinates: coordinatesRef.current[member.id] ?? [],
         });
@@ -192,17 +192,21 @@ export function Map({}: {}) {
     }
 
     const { sensorData, crewMember } = sensorDataWithCrew;
+    // console.log('raw:', [sensorData.Longitude, sensorData.Latitude]);
     const { coordinates } = calcCoordinates({
       prev: sensorData,
       data: sensorData,
+      calibrationOpts: crewMember.calibrationOpts,
     });
-    console.log('recalculated:', coordinates);
+    // console.log('new:', coordinates);
 
+    // 👣 render path
     if (!coordinatesRef.current[crewMember.id]) {
       coordinatesRef.current[crewMember.id] = [];
     }
     coordinatesRef.current[crewMember.id].push(coordinates as number[]);
 
+    // 📍 render marker
     updateMarker({
       id: crewMember.id,
       initials: crewMember.initials,

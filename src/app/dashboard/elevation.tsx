@@ -39,7 +39,6 @@ export function Elevation() {
     <div className="flex h-full w-full flex-col items-start rounded-md bg-bg-gray-2 p-4">
       <div className="flex w-full items-center gap-x-3">
         <h1>Elevation</h1>
-        <p>Len: {teams[0].crew[0].sensorData.length}</p>
         <hr className="flex-1 border-bg-gray-3" />
         <LockIcon size={14} />
       </div>
@@ -81,7 +80,7 @@ function FloorLevel({
 
   return (
     <div className="relative flex w-full flex-col">
-      <div className="border-border-default mb-2 ml-auto mr-0 flex items-center justify-center rounded-sm border bg-bg-gray-3 px-3.5 py-0.5">
+      <div className="mb-2 ml-auto mr-0 flex items-center justify-center rounded-sm border border-border-default bg-bg-gray-3 px-3.5 py-0.5">
         <p>{crew.length}</p>
       </div>
 

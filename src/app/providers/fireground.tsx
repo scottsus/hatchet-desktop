@@ -1,3 +1,4 @@
+import { INTERVAL } from '@/src/env';
 import {
   sensorDataQueue,
   startMockedLoadDataAndStartStreaming,
@@ -55,7 +56,6 @@ export function FiregroundProvider({
   useEffect(() => {
     startMockedLoadDataAndStartStreaming();
 
-    const DELAY = 100;
     const interval = setInterval(() => {
       if (sensorDataQueue.length > 0) {
         const sensorData = sensorDataQueue.shift();
@@ -70,7 +70,7 @@ export function FiregroundProvider({
           });
         }
       }
-    }, DELAY);
+    }, INTERVAL);
 
     return () => clearInterval(interval);
   }, []);

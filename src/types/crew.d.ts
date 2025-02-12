@@ -12,10 +12,17 @@ export interface CrewMember {
   relative_elevation: number; // deprecated soon
   sensorSrc: string;
   sensorData: SensorData[];
+  calibrationOpts?: CalibrationOpts;
 }
 
 export interface Team {
   name: string;
   color: string;
   crew: CrewMember[];
+}
+
+export interface CalibrationOpts {
+  rotationAngle: number;
+  shrinkFactorX: number;
+  shrinkFactorY: number;
 }

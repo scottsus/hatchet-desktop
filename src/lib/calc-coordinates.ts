@@ -1,24 +1,37 @@
 import { LngLatLike } from 'mapbox-gl';
 
+import { CalibrationOpts } from '../types/crew';
 import { SensorData } from '../types/sensor-data';
 
 const EARTH_RADIUS_METERS = 6_378_137;
 const DERGEES_PER_METER = 1 / (EARTH_RADIUS_METERS * (Math.PI / 180));
 
+let initialLon = 0;
+let initialLat = 0;
+
 export function calcCoordinates({
   prev,
   data,
+  calibrationOpts,
 }: {
   prev: SensorData;
   data: SensorData;
+  calibrationOpts?: CalibrationOpts;
 }) {
+  console.log(initialLon, initialLat);
+
   const count = data['Message Counter'];
   const temperature = data.Temperature;
 
-  const lat = data.Latitude;
   const lon = data.Longitude;
-  const initialLat = !isNaN(lat) ? lat : 0;
-  const initialLon = !isNaN(lon) ? lon : 0;
+  const lat = data.Latitude;
+  [initialLon, initialLat] = initializeCheckLonLat({
+    initialLon,
+    initialLat,
+    lon,
+    lat,
+    count,
+  });
 
   const x = data['Position Estimation Inertial X'];
   const y = data['Position Estimation Inertial Y'];
@@ -26,9 +39,43 @@ export function calcCoordinates({
   let dx = y;
   let dy = x;
 
-  const coordinates = recalcCoordinates(dx, dy, initialLat, initialLon);
+  const coordinates = recalcCoordinates(
+    dx,
+    dy,
+    initialLat,
+    initialLon,
+    calibrationOpts,
+  );
 
   return { count, temperature, x, y, coordinates };
+}
+
+function initializeCheckLonLat({
+  initialLon,
+  initialLat,
+  lon,
+  lat,
+  count,
+}: {
+  initialLon: number;
+  initialLat: number;
+  lon: number;
+  lat: number;
+  count: number;
+}) {
+  if (initialLon !== 0 || initialLat !== 0) {
+    return [initialLon, initialLat];
+  }
+
+  if (count === 0) {
+    return [0, 0];
+  }
+
+  if (isNaN(lat) || isNaN(lon)) {
+    return [0, 0];
+  }
+
+  return [lon, lat];
 }
 
 function recalcCoordinates(
@@ -36,10 +83,12 @@ function recalcCoordinates(
   posY: number,
   initialLat: number,
   initialLon: number,
-  rotationAngle: number = 165,
-  shrinkFactorX: number = 1,
-  shrinkFactorY: number = 0.8,
+  calibrationOpts?: CalibrationOpts,
 ): LngLatLike {
+  const rotationAngle = calibrationOpts?.rotationAngle ?? 165;
+  const shrinkFactorX = calibrationOpts?.shrinkFactorX ?? 1.0;
+  const shrinkFactorY = calibrationOpts?.shrinkFactorY ?? 0.8;
+
   const rotatedDx =
     posX * Math.cos((Math.PI * rotationAngle) / 180) +
     posY * Math.sin((Math.PI * rotationAngle) / 180);
