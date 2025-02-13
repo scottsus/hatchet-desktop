@@ -39,34 +39,46 @@ export function Map({}: {}) {
   const [mapView, setMapView] = useState<'dark-v11' | 'satellite-v9'>(
     'dark-v11',
   );
+  const [trailsVisible, setTrailsVisible] = useState(true);
+
   const toggleMapView = () => {
     const newStyle = mapView === 'dark-v11' ? 'satellite-v9' : 'dark-v11';
     setMapView(newStyle);
     if (mapRef.current) {
       mapRef.current.setStyle(`mapbox://styles/mapbox/${newStyle}`);
+      mapRef.current.on('style.load', () => {
+        // Re-add sources and layers after style change
+        mapData.forEach((member) => {
+          initializePath({
+            routeId: member.route,
+            layerId: member.layer,
+            color: member.color,
+            coordinates: coordinatesRef.current[member.id] ?? [],
+          });
+        });
+        // Reapply trails visibility
+        applyTrailsVisibility(trailsVisible);
+      });
     }
   };
 
   const toggleTrails = () => {
-    const layers = [
-      'layer_1',
-      // 'layer_2',
-      // 'layer_3',
-      // 'layer_4',
-      // 'layer_5',
-      // 'layer_6',
-    ];
+    setTrailsVisible((prev) => {
+      const newVisibility = !prev;
+      applyTrailsVisibility(newVisibility);
+      return newVisibility;
+    });
+  };
+
+  const applyTrailsVisibility = (visible: boolean) => {
+    const layers = mapData.map((member) => member.layer);
     layers.forEach((layerId) => {
       const layer = mapRef.current?.getLayer(layerId);
       if (layer) {
-        const isVisible = mapRef.current?.getLayoutProperty(
-          layerId,
-          'visibility',
-        );
         mapRef.current?.setLayoutProperty(
           layerId,
           'visibility',
-          isVisible === 'visible' ? 'none' : 'visible',
+          visible ? 'visible' : 'none',
         );
       }
     });
@@ -88,31 +100,43 @@ export function Map({}: {}) {
     }
 
     const map = mapRef.current;
-    map.addSource(routeId, {
-      type: 'geojson',
-      data: {
+    const source = map.getSource(routeId);
+    if (source) {
+      (source as mapboxgl.GeoJSONSource).setData({
         type: 'Feature',
         properties: {},
         geometry: {
           type: 'LineString',
           coordinates,
         },
-      },
-    });
-    map.addLayer({
-      id: layerId,
-      type: 'line',
-      source: routeId,
-      layout: {
-        'line-join': 'round',
-        'line-cap': 'round',
-      },
-      paint: {
-        'line-color': color,
-        'line-width': 2,
-        'line-dasharray': [3, 2], // [dash length, gap length]
-      },
-    });
+      });
+    } else {
+      map.addSource(routeId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates,
+          },
+        },
+      });
+      map.addLayer({
+        id: layerId,
+        type: 'line',
+        source: routeId,
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': color,
+          'line-width': 2,
+          'line-dasharray': [3, 2], // [dash length, gap length]
+        },
+      });
+    }
   }
 
   function updateMarker({
@@ -181,8 +205,10 @@ export function Map({}: {}) {
           coordinates: coordinatesRef.current[member.id] ?? [],
         });
       });
+      // Apply initial trails visibility
+      applyTrailsVisibility(trailsVisible);
     });
-  }, []);
+  }, [mapData]);
 
   // when new data comes in
   useEffect(() => {
@@ -192,17 +218,14 @@ export function Map({}: {}) {
     }
 
     const { sensorData, crewMember } = sensorDataWithCrew;
-    const { coordinates } = calcCoordinates({
-      data: sensorData,
-      calibrationOpts: crewMember.calibrationOpts,
-    });
-    if (
-      Array.isArray(coordinates) &&
-      coordinates[0] === 0 &&
-      coordinates[1] === 0
-    ) {
+    if (crewMember.thesia_count <= 0) {
       return;
     }
+
+    const { coordinates } = calcCoordinates({
+      data: sensorData,
+      member: crewMember,
+    });
 
     // 👣 render path
     if (!coordinatesRef.current[crewMember.id]) {
@@ -217,6 +240,18 @@ export function Map({}: {}) {
       color: crewMember.color,
       lngLat: coordinates,
       markers: markersRef.current,
+    });
+  }, [teams]);
+
+  // Update path colors when team colors change
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    mapData.forEach((member) => {
+      const layer = mapRef.current?.getLayer(member.layer);
+      if (layer) {
+        mapRef.current?.setPaintProperty(member.layer, 'line-color', member.color);
+      }
     });
   }, [teams]);
 

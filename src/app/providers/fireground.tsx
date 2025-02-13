@@ -38,14 +38,24 @@ export function FiregroundProvider({
     useState<SensorDataWithCrew | null>(null);
 
   function updateSensorData(member: CrewMember, newData: SensorData) {
-    setTeams((prev) =>
-      prev.map((team) => ({
-        ...team,
-        crew: team.crew.map((m) =>
-          m === member ? { ...m, sensorData: [...m.sensorData, newData] } : m,
-        ),
-      })),
-    );
+    if (newData['Message Counter'] > 0) {
+      setTeams((prev) =>
+        prev.map((team) => ({
+          ...team,
+          crew: team.crew.map((m) =>
+            m === member
+              ? {
+                  ...m,
+                  initialLat: m.initialLat ?? newData.Latitude,
+                  initialLon: m.initialLon ?? newData.Longitude,
+                  thesia_count: newData['Message Counter'],
+                  sensorData: [...m.sensorData, newData],
+                }
+              : m
+          ),
+        }))
+      );
+    }
   }
 
   const getLatestSensorDataWithCrew = useCallback(
@@ -73,7 +83,7 @@ export function FiregroundProvider({
     }, INTERVAL);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [teams]);
 
   return (
     <FiregroundContext.Provider

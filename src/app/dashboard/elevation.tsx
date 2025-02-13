@@ -3,10 +3,29 @@ import { cn } from '@/src/lib/utils';
 import { CrewMember } from '@/src/types/crew';
 import { LockIcon, UsersIcon } from 'lucide-react';
 import { useCallback } from 'react';
-
 import { useFireground } from '../providers/fireground';
 
 const TOPMOST_FLOOR = 4;
+// Modify member color based on floor
+const floorColors: { [key: number]: string } = {
+  1: '#3880A9',  // blue for first floor
+  2: '#9259A0',  // purple for second floor
+  3: '#AE8C5A'   // yellow for third floor
+  };
+
+function estimateFloor(pressometer: number, inertialZ: number): number {
+  // Weighted blend of sensors
+  const blendedAltitude = (pressometer * 0.7) + (inertialZ * 0.3);
+  
+  // Floor thresholds
+  if (blendedAltitude > -30) {
+    return 1; // First floor
+  } else if (blendedAltitude > -100) {
+    return 2; // Second floor
+  } else {
+    return 3; // Third floor
+  }
+}
 
 export function Elevation() {
   const { teams } = useFireground();
@@ -20,9 +39,16 @@ export function Elevation() {
 
     teams.forEach((team) => {
       team.crew.forEach((member) => {
-        const level = member.sensorData[member.sensorData.length - 1]?.Altitude;
-        if (level) {
-          crewByLevel[Math.floor((level % 3) + 1)]?.push(member);
+        const altitude = Number(member.sensorData[member.sensorData.length - 1]?.['Altitude Estimation Pressometer']);
+        const position = Number(member.sensorData[member.sensorData.length - 1]?.['Position Estimation Inertial Z']);
+        if (!isNaN(altitude) && !isNaN(position)) {
+          // Use 70% altitude and 30% inertial for better stability
+          // const level = -(altitude * 0.8 + position * 0.2);
+          // console.log(member.initials, level);
+          // const floor = Math.min(Math.max(Math.ceil(level / 45), 1), 3);
+          const floor = estimateFloor(altitude, position);
+          crewByLevel[floor]?.push(member);
+          member.color = floorColors[floor];
         }
       });
     });
