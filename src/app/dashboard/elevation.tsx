@@ -89,22 +89,24 @@ export function Elevation() {
         <FloorLevel level={3} />
         <FloorLevel level={2} />
         <FloorLevel level={1} />
-        <div>
-          {teams
-            .flatMap((team) => team.crew)
-            .map((member, idx) => (
-              <FireFighterCircle
-                key={member.id}
-                initials={member.initials}
-                color={member.color}
-                style={{
-                  position: 'absolute',
-                  left: getHorizontalPosition(idx),
-                  bottom: getVerticalPosition(member),
-                }}
-              />
-            ))}
-        </div>
+        {!USE_DISTINCT_FLOORS_FOR_ELEVATION && (
+          <div>
+            {teams
+              .flatMap((team) => team.crew)
+              .map((member, idx) => (
+                <FireFighterCircle
+                  key={member.id}
+                  initials={member.initials}
+                  color={member.color}
+                  style={{
+                    position: 'absolute',
+                    left: getHorizontalPosition(idx),
+                    bottom: getVerticalPosition(member),
+                  }}
+                />
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );

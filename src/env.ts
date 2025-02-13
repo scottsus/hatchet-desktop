@@ -6,7 +6,7 @@ export const USE_CALL_HEADER = false;
 
 export const USE_SIMULATE_DATA_STREAM = false;
 
-export const USE_DISTINCT_FLOORS_FOR_ELEVATION = false;
+export const USE_DISTINCT_FLOORS_FOR_ELEVATION = true;
 
 // Map
 
