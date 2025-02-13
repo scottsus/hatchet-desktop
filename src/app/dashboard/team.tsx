@@ -42,24 +42,18 @@ import {
   TargetIcon,
   UsersIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { LngLatLike } from 'mapbox-gl';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SyncLoader } from 'react-spinners';
+
+import { useFireground } from '../providers/fireground';
 
 const USE_MORE_METRICS = false;
 
-export function Teams(
-  {
-    // updateTemperature,
-    // updateThesiaCount,
-    // updateRelativeElevation,
-  }: {
-    // updateTemperature: (index: number, temp: number) => void;
-    // updateThesiaCount: (index: number, count: number) => void;
-    // updateRelativeElevation: (index: number, elevation: number) => void;
-  },
-) {
+export function Teams() {
+  const { teams } = useFireground();
+
   const [loading, setLoading] = useState(true);
-  const [teams, setTeams] = useState<Team[]>(mockedTeams);
   // const sensors = useSensors(
   //   useSensor(PointerSensor),
   //   useSensor(KeyboardSensor, {
@@ -112,70 +106,6 @@ export function Teams(
   );
 }
 
-export function OverallStatus() {
-  const teams = mockedTeams;
-  const total = teams.reduce((acc, team) => acc + team.crew.length, 0);
-  const signalStrengths = teams.reduce(
-    (acc, team) => {
-      team.crew.forEach((crewMember) => {
-        switch (crewMember.signalStrength) {
-          case 'high':
-            acc.high++;
-            break;
-          case 'med':
-            acc.med++;
-            break;
-          case 'low':
-            acc.low++;
-            break;
-        }
-      });
-      return acc;
-    },
-    { high: 0, med: 0, low: 0 },
-  );
-  const { high, med, low } = signalStrengths;
-
-  return (
-    <div className="flex w-full justify-around rounded-lg bg-bg-gray-2 p-3">
-      <div className="flex flex-col rounded-lg border border-[#414141] px-3 py-1">
-        <p className="text-[10px] text-text-muted">Online</p>
-        <p className="text-xs">
-          {total}/{total} Online
-        </p>
-      </div>
-
-      <div className="flex flex-col rounded-lg border border-[#414141] px-3 py-1">
-        <p className="text-[10px] text-text-muted">Signal Strength</p>
-        <div className="flex gap-x-10">
-          <div className="flex items-center gap-x-1">
-            <div className="size-[6px] rounded-full bg-[#9CF984]" />
-            <p className="text-xs">
-              {high}/{total}
-            </p>
-          </div>
-          <div className="flex items-center gap-x-1">
-            <div className="size-[6px] rounded-full bg-[#CEA064]" />
-            <p className="text-xs">
-              {med}/{total}
-            </p>
-          </div>
-          <div className="flex items-center gap-x-1">
-            <div className="size-[6px] rounded-full bg-[#C55D4C]" />
-            <p className="text-xs">
-              {low}/{total}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center rounded-lg border border-[#414141] px-4 py-1">
-        <RefreshCwIcon size={15} color="#B2B2B2" />
-      </div>
-    </div>
-  );
-}
-
 function Team({ name, crew }: { name: string; crew: CrewMember[] }) {
   const { isOver, setNodeRef } = useDroppable({ id: name });
   const style = {};
@@ -220,23 +150,27 @@ function CrewMember({
   index,
   teamName,
   crewMember,
-  // updateTemperature,
-  // updateThesiaCount,
-  // updateRelativeElevation,
 }: {
   index: number;
   teamName: string;
   crewMember: CrewMember;
-  // updateTemperature: (index: number, temp: number) => void;
-  // updateThesiaCount: (index: number, count: number) => void;
-  // updateRelativeElevation: (index: number, elevation: number) => void;
 }) {
+  const { getLatestSensorData, reCenter } = useFireground();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const toggleExpansion = () => setIsExpanded((isExpanded) => !isExpanded);
   const signalColors = {
     low: '#C55D4C',
     med: '#CEA064',
     high: '#9CF984',
+  };
+
+  const onClickReCenter = () => {
+    const sensorData = getLatestSensorData(crewMember.id);
+    console.log([sensorData?.Longitude, sensorData?.Latitude]);
+    if (sensorData) {
+      reCenter([sensorData.Longitude, sensorData.Latitude]);
+    }
   };
 
   // const { attributes, listeners, setNodeRef, transform, transition } =
@@ -286,6 +220,7 @@ function CrewMember({
         <button
           className="hover:brightness-125' cursor-pointer rounded-md border-2 bg-bg-gray-3 p-2 transition-all"
           style={{ borderColor: crewMember.color }}
+          onClick={onClickReCenter}
         >
           <TargetIcon size={18} />
         </button>

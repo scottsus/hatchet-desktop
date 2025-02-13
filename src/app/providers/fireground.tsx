@@ -1,4 +1,4 @@
-import { INTERVAL } from '@/src/env';
+import { DEMO_INITIAL_CENTER, INTERVAL } from '@/src/env';
 import {
   sensorDataQueue,
   startMockedLoadDataAndStartStreaming,
@@ -6,6 +6,7 @@ import {
 import { mockedCallDetails, mockedTeams } from '@/src/lib/mocks';
 import { CrewMember, Team } from '@/src/types/crew';
 import { SensorData, SensorDataWithCrew } from '@/src/types/sensor-data';
+import { LngLatLike } from 'mapbox-gl';
 import {
   createContext,
   useCallback,
@@ -20,6 +21,9 @@ type FiregroundContextType = {
   callDetails: CallDetails;
   teams: Team[];
   getLatestSensorDataWithCrew: () => SensorDataWithCrew | null;
+  getLatestSensorData: (memberId: string) => SensorData | undefined;
+  mapCenter: LngLatLike;
+  reCenter: (center: LngLatLike) => void;
 };
 
 const FiregroundContext = createContext<FiregroundContextType | undefined>(
@@ -36,6 +40,9 @@ export function FiregroundProvider({
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [latestSensorData, setLatestSensorDataWithCrew] =
     useState<SensorDataWithCrew | null>(null);
+  const [mapCenter, setMapCenter] = useState<LngLatLike>(
+    DEMO_INITIAL_CENTER as LngLatLike,
+  );
 
   function updateSensorData(member: CrewMember, newData: SensorData) {
     if (newData['Message Counter'] > 0) {
@@ -51,9 +58,9 @@ export function FiregroundProvider({
                   thesia_count: newData['Message Counter'],
                   sensorData: [...m.sensorData, newData],
                 }
-              : m
+              : m,
           ),
-        }))
+        })),
       );
     }
   }
@@ -62,6 +69,24 @@ export function FiregroundProvider({
     () => latestSensorData,
     [latestSensorData],
   );
+
+  const getLatestSensorData = useCallback(
+    (memberId: string) => {
+      const crewMember = teams
+        .flatMap((team) => team.crew)
+        .find((member) => member.id === memberId);
+      if (!crewMember) {
+        return undefined;
+      }
+
+      return crewMember.sensorData[crewMember.sensorData.length - 1];
+    },
+    [teams],
+  );
+
+  const reCenter = (center: LngLatLike) => {
+    setMapCenter(center);
+  };
 
   useEffect(() => {
     startMockedLoadDataAndStartStreaming();
@@ -87,7 +112,14 @@ export function FiregroundProvider({
 
   return (
     <FiregroundContext.Provider
-      value={{ callDetails, teams, getLatestSensorDataWithCrew }}
+      value={{
+        callDetails,
+        teams,
+        getLatestSensorDataWithCrew,
+        getLatestSensorData,
+        mapCenter,
+        reCenter,
+      }}
     >
       {children}
     </FiregroundContext.Provider>

@@ -4,10 +4,12 @@ export function FireFighterCircle({
   initials,
   color,
   size = 'sm',
+  style,
 }: {
   initials: string;
   color: string;
   size?: 'sm' | 'md';
+  style?: React.CSSProperties;
 }) {
   const isDefaultSize = size === 'md';
 
@@ -17,7 +19,7 @@ export function FireFighterCircle({
         'flex items-center justify-center rounded-full p-1',
         isDefaultSize ? 'p-1' : 'p-[0.2rem]',
       )}
-      style={{ backgroundColor: color }}
+      style={{ backgroundColor: color, ...style }}
     >
       <div
         className={cn(

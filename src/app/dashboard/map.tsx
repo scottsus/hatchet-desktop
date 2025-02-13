@@ -1,6 +1,7 @@
 'use client';
 
 import { FireFighterCircle } from '@/src/components/ff-circle';
+import { DEMO_INITIAL_CENTER } from '@/src/env';
 import { calcCoordinates } from '@/src/lib/calc-coordinates';
 import { RouteIcon, SatelliteIcon } from 'lucide-react';
 import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
@@ -13,13 +14,13 @@ const mapboxConfig = (ref: any) =>
   ({
     container: ref,
     style: 'mapbox://styles/mapbox/dark-v11',
-    center: [-122.177495, 47.615030999999995],
+    center: DEMO_INITIAL_CENTER,
     zoom: 18,
     attributionControl: false,
   }) as MapOptions;
 
 export function Map({}: {}) {
-  const { teams, getLatestSensorDataWithCrew } = useFireground();
+  const { teams, mapCenter, getLatestSensorDataWithCrew } = useFireground();
 
   const mapData = teams
     .flatMap((team) => team.crew)
@@ -205,7 +206,6 @@ export function Map({}: {}) {
           coordinates: coordinatesRef.current[member.id] ?? [],
         });
       });
-      // Apply initial trails visibility
       applyTrailsVisibility(trailsVisible);
     });
   }, [mapData]);
@@ -233,6 +233,18 @@ export function Map({}: {}) {
     }
     coordinatesRef.current[crewMember.id].push(coordinates as number[]);
 
+    // 🎨 repaint paths
+    mapData.forEach((member) => {
+      const layer = mapRef.current?.getLayer(member.layer);
+      if (layer) {
+        mapRef.current?.setPaintProperty(
+          member.layer,
+          'line-color',
+          member.color,
+        );
+      }
+    });
+
     // 📍 render marker
     updateMarker({
       id: crewMember.id,
@@ -243,17 +255,12 @@ export function Map({}: {}) {
     });
   }, [teams]);
 
-  // Update path colors when team colors change
+  // when upstream handlers are called
   useEffect(() => {
     if (!mapRef.current) return;
 
-    mapData.forEach((member) => {
-      const layer = mapRef.current?.getLayer(member.layer);
-      if (layer) {
-        mapRef.current?.setPaintProperty(member.layer, 'line-color', member.color);
-      }
-    });
-  }, [teams]);
+    mapRef.current.flyTo({ center: mapCenter, essential: true });
+  }, [mapCenter]);
 
   return (
     <div className="relative size-full">

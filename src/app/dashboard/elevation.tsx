@@ -1,65 +1,74 @@
 import { FireFighterCircle } from '@/src/components/ff-circle';
+import { USE_DISTINCT_FLOORS_FOR_ELEVATION } from '@/src/env';
 import { cn } from '@/src/lib/utils';
 import { CrewMember } from '@/src/types/crew';
 import { LockIcon, UsersIcon } from 'lucide-react';
 import { useCallback } from 'react';
+
 import { useFireground } from '../providers/fireground';
 
 const TOPMOST_FLOOR = 4;
-// Modify member color based on floor
 const floorColors: { [key: number]: string } = {
-  1: '#3880A9',  // blue for first floor
-  2: '#9259A0',  // purple for second floor
-  3: '#AE8C5A'   // yellow for third floor
-  };
+  1: '#3880A9',
+  2: '#9259A0',
+  3: '#AE8C5A',
+};
+const PRESSOMETER_WEIGHT = 0.7;
+const INERTIAL_WEIGHT = 0.3;
 
 function estimateFloor(pressometer: number, inertialZ: number): number {
-  // Weighted blend of sensors
-  const blendedAltitude = (pressometer * 0.7) + (inertialZ * 0.3);
-  
-  // Floor thresholds
+  const blendedAltitude =
+    pressometer * PRESSOMETER_WEIGHT + inertialZ * INERTIAL_WEIGHT;
   if (blendedAltitude > -30) {
-    return 1; // First floor
+    return 1;
   } else if (blendedAltitude > -100) {
-    return 2; // Second floor
+    return 2;
   } else {
-    return 3; // Third floor
+    return 3;
   }
 }
 
 export function Elevation() {
-  const { teams } = useFireground();
+  const { teams, getLatestSensorData } = useFireground();
 
-  const getCrewOnLevels = useCallback(() => {
-    const crewByLevel: { [level: string]: CrewMember[] } = {
-      3: [],
-      2: [],
-      1: [],
-    };
+  function getHorizontalPosition(idx: number) {
+    const totalCount = teams.flatMap((team) => team.crew).length;
+    return `${((idx + 0.2) / totalCount) * 100}%`;
+  }
 
-    teams.forEach((team) => {
-      team.crew.forEach((member) => {
-        const altitude = Number(member.sensorData[member.sensorData.length - 1]?.['Altitude Estimation Pressometer']);
-        const position = Number(member.sensorData[member.sensorData.length - 1]?.['Position Estimation Inertial Z']);
-        if (!isNaN(altitude) && !isNaN(position)) {
-          // Use 70% altitude and 30% inertial for better stability
-          // const level = -(altitude * 0.8 + position * 0.2);
-          // console.log(member.initials, level);
-          // const floor = Math.min(Math.max(Math.ceil(level / 45), 1), 3);
-          const floor = estimateFloor(altitude, position);
-          crewByLevel[floor]?.push(member);
-          member.color = floorColors[floor];
-        }
-      });
-    });
+  function getVerticalPosition(member: CrewMember): string {
+    const sensorData = getLatestSensorData(member.id);
+    if (!sensorData) {
+      return '';
+    }
 
-    const getCrewOnLevel = (level: 'Roof' | number) => {
-      const levelIndex = level === 'Roof' ? 0 : level;
-      return crewByLevel[levelIndex] || [];
-    };
+    const pressometer = sensorData['Altitude Estimation Pressometer'];
+    const inertialZ = sensorData['Position Estimation Inertial Z'];
+    const altitude =
+      pressometer * PRESSOMETER_WEIGHT + inertialZ * INERTIAL_WEIGHT;
 
-    return getCrewOnLevel;
-  }, [teams]);
+    let verticalPos: number;
+
+    if (altitude >= 0) {
+      verticalPos = 0;
+    } else if (altitude >= -30) {
+      // Map [0, -30] to [0%, 33%]
+      const t = (0 - altitude) / 30;
+      verticalPos = 0 + t * 33;
+    } else if (altitude >= -100) {
+      // Map [-30, -100] to [34%, 67%]
+      const t = (altitude - -30) / (-100 - -30); // denominator is -70
+      verticalPos = 34 + t * (67 - 34);
+    } else if (altitude >= -160) {
+      // Map [-100, -160] to [68%, 100%]
+      const t = (altitude - -100) / (-160 - -100); // denominator is -60
+      verticalPos = 68 + t * (100 - 68);
+    } else {
+      verticalPos = 100;
+    }
+
+    return `${verticalPos}%`;
+  }
 
   return (
     <div className="flex h-full w-full flex-col items-start rounded-md bg-bg-gray-2 p-4">
@@ -75,11 +84,27 @@ export function Elevation() {
         ))}
       </div>
 
-      <div className="flex h-full w-full flex-col">
-        <FloorLevel level="Roof" getCrew={getCrewOnLevels} />
-        <FloorLevel level={3} getCrew={getCrewOnLevels} />
-        <FloorLevel level={2} getCrew={getCrewOnLevels} />
-        <FloorLevel level={1} getCrew={getCrewOnLevels} />
+      <div className="relative flex h-full w-full flex-col">
+        <FloorLevel level="Roof" />
+        <FloorLevel level={3} />
+        <FloorLevel level={2} />
+        <FloorLevel level={1} />
+        <div>
+          {teams
+            .flatMap((team) => team.crew)
+            .map((member, idx) => (
+              <FireFighterCircle
+                key={member.id}
+                initials={member.initials}
+                color={member.color}
+                style={{
+                  position: 'absolute',
+                  left: getHorizontalPosition(idx),
+                  bottom: getVerticalPosition(member),
+                }}
+              />
+            ))}
+        </div>
       </div>
     </div>
   );
@@ -94,14 +119,46 @@ function TeamBadge({ name, color }: { name: string; color: string }) {
   );
 }
 
-function FloorLevel({
-  level,
-  getCrew,
-}: {
-  level: 'Roof' | number;
-  getCrew: () => (level: number) => CrewMember[];
-}) {
-  const loadCrew = getCrew();
+function FloorLevel({ level }: { level: 'Roof' | number }) {
+  const { teams } = useFireground();
+
+  const getCrewOnLevels = useCallback(() => {
+    const crewByLevel: { [level: string]: CrewMember[] } = {
+      3: [],
+      2: [],
+      1: [],
+    };
+
+    teams.forEach((team) => {
+      team.crew.forEach((member) => {
+        const altitude = Number(
+          member.sensorData[member.sensorData.length - 1]?.[
+            'Altitude Estimation Pressometer'
+          ],
+        );
+        const position = Number(
+          member.sensorData[member.sensorData.length - 1]?.[
+            'Position Estimation Inertial Z'
+          ],
+        );
+
+        if (!isNaN(altitude) && !isNaN(position)) {
+          const floor = estimateFloor(altitude, position);
+          crewByLevel[floor]?.push(member);
+          member.color = floorColors[floor];
+        }
+      });
+    });
+
+    const getCrewOnLevel = (level: 'Roof' | number) => {
+      const levelIndex = level === 'Roof' ? 0 : level;
+      return crewByLevel[levelIndex] || [];
+    };
+
+    return getCrewOnLevel;
+  }, [teams]);
+
+  const loadCrew = getCrewOnLevels();
   const crew = loadCrew(level === 'Roof' ? TOPMOST_FLOOR : level);
 
   return (
@@ -134,15 +191,17 @@ function FloorLevel({
         </div>
       )}
 
-      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-x-2">
-        {crew.map((member) => (
-          <FireFighterCircle
-            key={member.id}
-            initials={member.initials}
-            color={member.color}
-          />
-        ))}
-      </div>
+      {USE_DISTINCT_FLOORS_FOR_ELEVATION && (
+        <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-x-2">
+          {crew.map((member) => (
+            <FireFighterCircle
+              key={member.id}
+              initials={member.initials}
+              color={member.color}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="flex w-full items-center gap-x-2">
         <hr className="flex-1 border-[0.12rem] border-[#868686]" />

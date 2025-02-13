@@ -7,7 +7,8 @@ import { CallDetails } from './call';
 import { Elevation } from './elevation';
 import { Info } from './info';
 import { Map } from './map';
-import { OverallStatus, Teams } from './team';
+import { OverallStatus } from './status';
+import { Teams } from './team';
 
 export default function Dashboard() {
   return (
