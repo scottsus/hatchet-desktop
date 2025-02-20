@@ -90,42 +90,42 @@ export const mockedTeams: Team[] = [
           shrinkFactorX: 1,
           shrinkFactorY: 0.8
         }
-      },
-      {
-        id: 'RIT - Seat 3',
-        name: 'A. Alan 2208',
-        initials: 'AA',
-        color: '#AE8C5A',
-        time: '0:0:0',
-        signalStrength: 'med',
-        temperature: 0,
-        thesia_count: 0,
-        relative_elevation: 1,
-        sensorSrc: 'level4.csv',
-        sensorData: [],
-        calibrationOpts: {
-          rotationAngle: 185,
-          shrinkFactorX: 1,
-          shrinkFactorY: 0.8
-        }
-      },
-      {
-        id: 'Lieutenant - Seat 1',
-        name: 'A. Crenshaw 2209',
-        initials: 'AC',
-        color: '#AE8C5A',
-        time: '0:0:0',
-        signalStrength: 'high',
-        temperature: 0,
-        thesia_count: 0,
-        relative_elevation: 1,
-        sensorSrc: 'level5.csv',
-        sensorData: [],
-        calibrationOpts: {
-          rotationAngle: 165,
-          shrinkFactorX: 1,
-          shrinkFactorY: 0.8
-        }
+      // },
+      // {
+      //   id: 'RIT - Seat 3',
+      //   name: 'A. Alan 2208',
+      //   initials: 'AA',
+      //   color: '#AE8C5A',
+      //   time: '0:0:0',
+      //   signalStrength: 'med',
+      //   temperature: 0,
+      //   thesia_count: 0,
+      //   relative_elevation: 1,
+      //   sensorSrc: 'level4.csv',
+      //   sensorData: [],
+      //   calibrationOpts: {
+      //     rotationAngle: 185,
+      //     shrinkFactorX: 1,
+      //     shrinkFactorY: 0.8
+      //   }
+      // },
+      // {
+      //   id: 'Lieutenant - Seat 1',
+      //   name: 'A. Crenshaw 2209',
+      //   initials: 'AC',
+      //   color: '#AE8C5A',
+      //   time: '0:0:0',
+      //   signalStrength: 'high',
+      //   temperature: 0,
+      //   thesia_count: 0,
+      //   relative_elevation: 1,
+      //   sensorSrc: 'level5.csv',
+      //   sensorData: [],
+      //   calibrationOpts: {
+      //     rotationAngle: 165,
+      //     shrinkFactorX: 1,
+      //     shrinkFactorY: 0.8
+      //   }
       },
     ],
   },
