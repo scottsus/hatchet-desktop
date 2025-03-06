@@ -2,6 +2,8 @@ export const INTERVAL = 50; // 50ms
 
 export const IS_DEMO = process.env.DEV === 'scottsus' ? false : true;
 
+export const USE_ACTUAL_TCP_SERVER = true;
+
 export const USE_CALL_HEADER = false;
 
 export const USE_SIMULATE_DATA_STREAM = false;

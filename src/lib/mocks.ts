@@ -9,66 +9,6 @@ export const mockedCallDetails = {
 };
 
 export const mockedTeams: Team[] = [
-  // {
-  //   name: 'Unit 11',
-  //   color: '#558B97',
-  //   crew: [
-  //     {
-  //       id: '2204',
-  //       name: 'A. Forgosh',
-  //       initials: 'AF',
-  //       color: '#3880A9',
-  //       time: '0:0:0',
-  //       signalStrength: 'high',
-  //       temperature: 0,
-  //       thesia_count: 0,
-  //       relative_elevation: 2,
-  //       sensorSrc: 'apt4.1.csv',
-  //       sensorData: [],
-  //       calibrationOpts: {
-  //         rotationAngle: 0,
-  //         shrinkFactorX: 1,
-  //         shrinkFactorY: 0.8
-  //       }
-  //     },
-  //     {
-  //       id: 'Engineer - Seat 1',
-  //       name: 'R. Tan 2206',
-  //       initials: 'RT',
-  //       color: '#3880A9',
-  //       time: '0:0:0',
-  //       signalStrength: 'high',
-  //       temperature: 0,
-  //       thesia_count: 0,
-  //       relative_elevation: 2,
-  //       sensorSrc: 'apt2.csv',
-  //       sensorData: [],
-  //       calibrationOpts: {
-  //         rotationAngle: 35,
-  //         shrinkFactorX: 1.1,
-  //         shrinkFactorY: 0.75
-  //       }
-  //     },
-  //     {
-  //       id: 'ForcibleEntry - Seat 2',
-  //       name: 'D. Lewis 2207',
-  //       color: '#3880A9',
-  //       initials: 'DL',
-  //       time: '0:0:0',
-  //       signalStrength: 'high',
-  //       temperature: 0,
-  //       thesia_count: 0,
-  //       relative_elevation: 2,
-  //       sensorSrc: 'apt3.csv',
-  //       sensorData: [],
-  //       calibrationOpts: {
-  //         rotationAngle: -15,
-  //         shrinkFactorX: 0.9,
-  //         shrinkFactorY: 0.8
-  //       }
-  //     },
-  //   ],
-  // },
   {
     name: 'Heavy Rescue',
     color: '#C69956',
@@ -88,8 +28,8 @@ export const mockedTeams: Team[] = [
         calibrationOpts: {
           rotationAngle: -120,
           shrinkFactorX: 1,
-          shrinkFactorY: 0.8
-        }
+          shrinkFactorY: 0.8,
+        },
       },
       {
         id: 'RIT - Seat 3',
@@ -106,8 +46,8 @@ export const mockedTeams: Team[] = [
         calibrationOpts: {
           rotationAngle: 185,
           shrinkFactorX: 1,
-          shrinkFactorY: 0.8
-        }
+          shrinkFactorY: 0.8,
+        },
       },
       {
         id: 'Lieutenant - Seat 1',
@@ -124,8 +64,8 @@ export const mockedTeams: Team[] = [
         calibrationOpts: {
           rotationAngle: 165,
           shrinkFactorX: 1,
-          shrinkFactorY: 0.8
-        }
+          shrinkFactorY: 0.8,
+        },
       },
     ],
   },

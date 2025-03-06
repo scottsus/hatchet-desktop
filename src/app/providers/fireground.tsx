@@ -1,8 +1,13 @@
-import { DEMO_INITIAL_CENTER, INTERVAL } from '@/src/env';
+import {
+  DEMO_INITIAL_CENTER,
+  INTERVAL,
+  USE_ACTUAL_TCP_SERVER,
+} from '@/src/env';
 import {
   sensorDataQueue,
   startMockedLoadDataAndStartStreaming,
 } from '@/src/lib/data-stream';
+import { fetchSensorData } from '@/src/lib/fetch-data';
 import { mockedCallDetails, mockedTeams } from '@/src/lib/mocks';
 import { CrewMember, Team } from '@/src/types/crew';
 import { SensorData, SensorDataWithCrew } from '@/src/types/sensor-data';
@@ -89,11 +94,15 @@ export function FiregroundProvider({
   };
 
   useEffect(() => {
-    startMockedLoadDataAndStartStreaming();
+    if (!USE_ACTUAL_TCP_SERVER) {
+      startMockedLoadDataAndStartStreaming();
+    }
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       if (sensorDataQueue.length > 0) {
-        const sensorData = sensorDataQueue.shift();
+        const sensorData = USE_ACTUAL_TCP_SERVER
+          ? await fetchSensorData()
+          : sensorDataQueue.shift();
         const targetCrewMember = teams
           .flatMap((team) => team.crew)
           .find((m) => m.sensorSrc === sensorData?.id);
