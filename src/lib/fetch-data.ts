@@ -2,25 +2,16 @@ import { invoke } from '@tauri-apps/api/tauri';
 
 import { SensorData, SensorDataWithId } from '../types/sensor-data';
 
-const HOST = 'localhost';
-const PORT = 8080;
-
 export async function fetchSensorData(): Promise<SensorDataWithId | null> {
-  console.log(`Connecting to ${HOST}:${PORT} via Tauri...`);
-
   try {
-    const response = await invoke<string>('fetch_tcp_data', {
-      host: HOST,
-      port: PORT,
-    });
+    const response = await invoke<string>('fetch_tcp_data');
 
-    console.log('Received:', response);
-
-    const sensorData = parseCSVToSensorData(response.trim());
+    const sensorData = parseCSVToSensorDataV2(response.trim());
     const sensorDataWithId: SensorDataWithId = {
       ...sensorData,
       id: 'level.csv',
     };
+    console.log('withId:', sensorDataWithId);
 
     return sensorDataWithId;
   } catch (error) {
@@ -64,4 +55,86 @@ function parseCSVToSensorData(row: string): SensorData {
   };
 }
 
-// fetchSensorData().then(console.log);
+function parseCSVToSensorDataV2(row: string): SensorData {
+  // Extract data part after "data: " prefix if present
+  const dataString = row.startsWith('data: ') ? row.substring(6) : row;
+
+  const values = dataString.split(',');
+  const latitude = parseFloat(values[0]);
+  const longitude = parseFloat(values[1]);
+  const thesiaString = values[2] || '';
+
+  // Parse the thesia string if it exists and starts with #
+  let posX = 0;
+  let posY = 0;
+  let messageCounter = 1; // Default to 1 to ensure data is processed
+
+  if (thesiaString && thesiaString.startsWith('#')) {
+    // Remove the # prefix
+    const hexData = thesiaString.substring(1);
+
+    try {
+      // Extract position data from the hex string
+      // Assuming the format follows a specific pattern where:
+      // Position X is at bytes 22-25 (44-49 in hex string)
+      // Position Y is at bytes 26-29 (52-57 in hex string)
+      // These positions are estimates based on the sample data
+
+      // Extract X position (4 bytes)
+      if (hexData.length >= 50) {
+        const xHex = hexData.substring(44, 52);
+        // Convert from hex and handle two's complement for negative values
+        const xVal = parseInt(xHex, 16);
+        posX = xVal >= 0x80000000 ? xVal - 0x100000000 : xVal;
+        posX = posX / 100; // Scale factor (adjust as needed)
+      }
+
+      // Extract Y position (4 bytes)
+      if (hexData.length >= 58) {
+        const yHex = hexData.substring(52, 60);
+        // Convert from hex and handle two's complement for negative values
+        const yVal = parseInt(yHex, 16);
+        posY = yVal >= 0x80000000 ? yVal - 0x100000000 : yVal;
+        posY = posY / 100; // Scale factor (adjust as needed)
+      }
+
+      // Extract message counter (assuming it's at a specific position)
+      if (hexData.length >= 16) {
+        messageCounter = parseInt(hexData.substring(12, 16), 16);
+      }
+    } catch (error) {
+      console.error('Error parsing thesia string:', error);
+    }
+  }
+
+  return {
+    Temperature: 25.5, // mocked
+    Pressure: 1013.25, // mocked
+    Altitude: 100, // mocked
+    Day: new Date().getDate(),
+    Month: new Date().getMonth() + 1,
+    Year: new Date().getFullYear(),
+    Hour: new Date().getHours(),
+    Minute: new Date().getMinutes(),
+    Second: new Date().getSeconds(),
+    Latitude: latitude, // real data
+    Longitude: longitude, // real data
+    'Operator Id': 1, // mocked
+    'Message Counter': messageCounter, // extracted from thesia string
+    'Step Counter': 0, // mocked
+    Flags: 0, // mocked
+    'Position Estimation Inertial Magnetic X': 0, // mocked
+    'Position Estimation Inertial Magnetic Y': 0, // mocked
+    'Position Estimation Inertial X': posX, // extracted from thesia string
+    'Position Estimation Inertial Y': posY, // extracted from thesia string
+    'Position Estimation Inertial Z': 0, // mocked
+    'Altitude Estimation Pressometer': 0, // mocked
+    'Latitude Estimation GPS': latitude, // same as Latitude
+    'Longitude Estimation GPS': longitude, // same as Longitude
+    'GPS Estimation Quality': 1, // mocked
+    'North Alignment Angle Inertial Path': 0, // mocked
+    'Yaw Drift Inertial Path': 0, // mocked
+    'CRC-CCITT': 0, // mocked
+    thesia_string: thesiaString, // store original thesia string
+  };
+}

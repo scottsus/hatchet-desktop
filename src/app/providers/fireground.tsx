@@ -99,20 +99,25 @@ export function FiregroundProvider({
     }
 
     const interval = setInterval(async () => {
-      if (sensorDataQueue.length > 0) {
-        const sensorData = USE_ACTUAL_TCP_SERVER
-          ? await fetchSensorData()
-          : sensorDataQueue.shift();
-        const targetCrewMember = teams
-          .flatMap((team) => team.crew)
-          .find((m) => m.sensorSrc === sensorData?.id);
-        if (targetCrewMember && sensorData) {
-          updateSensorData(targetCrewMember, sensorData);
-          setLatestSensorDataWithCrew({
-            crewMember: targetCrewMember,
-            sensorData,
-          });
+      let sensorData: any;
+      if (USE_ACTUAL_TCP_SERVER) {
+        sensorData = await fetchSensorData();
+      } else {
+        if (sensorDataQueue.length > 0) {
+          sensorData = sensorDataQueue.shift();
         }
+      }
+      console.log('sensorData:', sensorData);
+
+      const targetCrewMember = teams
+        .flatMap((team) => team.crew)
+        .find((m) => m.sensorSrc === sensorData?.id);
+      if (targetCrewMember && sensorData) {
+        updateSensorData(targetCrewMember, sensorData);
+        setLatestSensorDataWithCrew({
+          crewMember: targetCrewMember,
+          sensorData,
+        });
       }
     }, INTERVAL);
 
