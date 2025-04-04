@@ -1,6 +1,6 @@
 import { CrewMember } from './crew';
 
-export type SensorDataWithId = SensorData & { id: string };
+export type SensorDataWithId = SensorData & { id: number };
 export type SensorDataWithCrew = {
   sensorData: SensorData;
   crewMember: CrewMember;

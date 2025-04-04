@@ -14,7 +14,7 @@ export const mockedTeams: Team[] = [
     color: '#C69956',
     crew: [
       {
-        id: 'RIT - Seat 2',
+        id: 1,
         name: 'S. Susanto 2205',
         initials: 'SS',
         color: '#9259A0',
@@ -32,7 +32,7 @@ export const mockedTeams: Team[] = [
         },
       },
       {
-        id: 'RIT - Seat 3',
+        id: 2,
         name: 'A. Alan 2208',
         initials: 'AA',
         color: '#AE8C5A',
@@ -50,7 +50,7 @@ export const mockedTeams: Team[] = [
         },
       },
       {
-        id: 'Lieutenant - Seat 1',
+        id: 3,
         name: 'A. Crenshaw 2209',
         initials: 'AC',
         color: '#AE8C5A',

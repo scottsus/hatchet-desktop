@@ -26,7 +26,7 @@ type FiregroundContextType = {
   callDetails: CallDetails;
   teams: Team[];
   getLatestSensorDataWithCrew: () => SensorDataWithCrew | null;
-  getLatestSensorData: (memberId: string) => SensorData | undefined;
+  getLatestSensorData: (memberId: number) => SensorData | undefined;
   mapCenter: LngLatLike;
   reCenter: (center: LngLatLike) => void;
 };
@@ -50,7 +50,7 @@ export function FiregroundProvider({
   );
 
   function updateSensorData(member: CrewMember, newData: SensorData) {
-    if (newData['Message Counter'] > 0) {
+    if (newData['Message Counter'] > 0 || USE_ACTUAL_TCP_SERVER) {
       setTeams((prev) =>
         prev.map((team) => ({
           ...team,
@@ -76,7 +76,7 @@ export function FiregroundProvider({
   );
 
   const getLatestSensorData = useCallback(
-    (memberId: string) => {
+    (memberId: number) => {
       const crewMember = teams
         .flatMap((team) => team.crew)
         .find((member) => member.id === memberId);
@@ -107,12 +107,13 @@ export function FiregroundProvider({
           sensorData = sensorDataQueue.shift();
         }
       }
-      console.log('sensorData:', sensorData);
 
       const targetCrewMember = teams
         .flatMap((team) => team.crew)
-        .find((m) => m.sensorSrc === sensorData?.id);
+        .find((m) => m.id === sensorData?.id);
+      console.log('targetCrewMember:', targetCrewMember);
       if (targetCrewMember && sensorData) {
+        console.log("WE FOUND A MAAATCH!!");
         updateSensorData(targetCrewMember, sensorData);
         setLatestSensorDataWithCrew({
           crewMember: targetCrewMember,

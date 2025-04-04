@@ -2,14 +2,81 @@ import { invoke } from '@tauri-apps/api/tauri';
 
 import { SensorData, SensorDataWithId } from '../types/sensor-data';
 
+// export async function fetchSensorData(): Promise<SensorDataWithId | null> {
+//   try {
+//     const response = await invoke<string>('fetch_tcp_data');
+
+//     const sensorData = parseCSVToSensorDataV2(response.trim());
+//     const sensorDataWithId: SensorDataWithId = {
+//       ...sensorData,
+//       id: 'level.csv',
+//     };
+//     console.log('withId:', sensorDataWithId);
+
+//     return sensorDataWithId;
+//   } catch (error) {
+//     console.error('Connection error:', error);
+//     return null;
+//   }
+// }
+
 export async function fetchSensorData(): Promise<SensorDataWithId | null> {
   try {
-    const response = await invoke<string>('fetch_tcp_data');
+    const userId = 1; // Replace with your actual userId source
+    const response = await invoke<string>('fetch_last_position', { userId });
 
-    const sensorData = parseCSVToSensorDataV2(response.trim());
+    const sensorData = response.trim();
+    // Parse the response which should be in format: "userId:id,latitude,longitude,zi,zp,zic"
+    const parts = sensorData.split(':');
+    
+    if (parts.length !== 2) {
+      console.error('Invalid data format');
+      return null;
+    }
+    
+    const valuesStr = parts[1].split(',');
+    
+    if (valuesStr.length < 6) {
+      console.error('Insufficient data values');
+      return null;
+    }
+    
+    const latitude = parseFloat(valuesStr[1]);
+    const longitude = parseFloat(valuesStr[2]);
+    const zi = parseFloat(valuesStr[3]); // Inertial Altitude
+    const zp = parseFloat(valuesStr[4]); // Barometric Altitude
+    const zic = parseFloat(valuesStr[5]); // Inertial Altitude fused with Barometric
+    
     const sensorDataWithId: SensorDataWithId = {
-      ...sensorData,
-      id: 'level.csv',
+      id: userId,
+      Temperature: 25.5, // default value
+      Pressure: 1013.25, // default value
+      Altitude: zp, // Using barometric altitude
+      Day: new Date().getDate(),
+      Month: new Date().getMonth() + 1,
+      Year: new Date().getFullYear(),
+      Hour: new Date().getHours(),
+      Minute: new Date().getMinutes(),
+      Second: new Date().getSeconds(),
+      Latitude: latitude,
+      Longitude: longitude,
+      'Operator Id': userId,
+      'Message Counter': 0,
+      'Step Counter': 0,
+      Flags: 0,
+      'Position Estimation Inertial Magnetic X': 0,
+      'Position Estimation Inertial Magnetic Y': 0,
+      'Position Estimation Inertial X': 0,
+      'Position Estimation Inertial Y': 0,
+      'Position Estimation Inertial Z': zi, // Using inertial altitude for Z
+      'Altitude Estimation Pressometer': zp, // Using barometric altitude
+      'Latitude Estimation GPS': latitude,
+      'Longitude Estimation GPS': longitude,
+      'GPS Estimation Quality': 1,
+      'North Alignment Angle Inertial Path': 0,
+      'Yaw Drift Inertial Path': 0,
+      'CRC-CCITT': 0,
+      thesia_string: `zi:${zi},zp:${zp},zic:${zic}`,
     };
     console.log('withId:', sensorDataWithId);
 
@@ -19,6 +86,8 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     return null;
   }
 }
+
+
 
 function parseCSVToSensorData(row: string): SensorData {
   const values = row.split(',');
