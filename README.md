@@ -42,4 +42,4 @@ Have 3 windows open, run the programs in this order
 3. yarn tauri dev
 
 DataStreamer located in scripts folder
-AriannaServer get here [Google Drive Link]](https://drive.google.com/drive/folders/1nL_LC-a1zWB0PO7IXJNdl2KyAP54Jtga?usp=sharing)
+AriannaServer get here [Google Drive Link](https://drive.google.com/drive/folders/1nL_LC-a1zWB0PO7IXJNdl2KyAP54Jtga?usp=sharing)
