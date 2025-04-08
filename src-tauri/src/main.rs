@@ -70,23 +70,45 @@ impl TcpConnection {
                         let mut buffer = [0; BUFFER_SIZE];
                         let mut response = String::new();
                         
-                        match stream_clone.read(&mut buffer) {
-                            Ok(bytes_read) => {
-                                if bytes_read > 0 {
-                                    let chunk = String::from_utf8_lossy(&buffer[..bytes_read]);
-                                    response.push_str(&chunk);
-                                    println!("Received data: {}", response.trim());
-                                    let _ = response_tx.send(Ok(response));
-                                } else {
-                                    let _ = response_tx.send(Err("No data received from server".to_string()));
-                                }
-                            },
-                            Err(e) => {
-                                if e.kind() == std::io::ErrorKind::WouldBlock || 
-                                   e.kind() == std::io::ErrorKind::TimedOut {
-                                    let _ = response_tx.send(Err("Timeout waiting for response".to_string()));
-                                } else {
-                                    let _ = response_tx.send(Err(format!("Failed to read from stream: {}", e)));
+                        // Set a timeout for reading the response
+                        let timeout = Duration::from_millis(1000); // Increase timeout for slow responses
+                        let start_time = std::time::Instant::now();
+                        
+                        loop {
+                            match stream_clone.read(&mut buffer) {
+                                Ok(bytes_read) => {
+                                    if bytes_read > 0 {
+                                        let chunk = String::from_utf8_lossy(&buffer[..bytes_read]);
+                                        response.push_str(&chunk);
+                                        println!("Received data: {}", response.trim());
+                                        
+                                        // If we've received content, send it
+                                        if !response.trim().is_empty() {
+                                            let _ = response_tx.send(Ok(response));
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // Check if we've timed out
+                                    if start_time.elapsed() >= timeout {
+                                        if response.trim().is_empty() {
+                                            println!("Timeout waiting for response - server may not recognize command");
+                                            // No response received within timeout - just return empty response
+                                            let _ = response_tx.send(Err("Timeout waiting for response - server may not recognize command".to_string()));
+                                        } else {
+                                            // We did get some data, so return what we have
+                                            let _ = response_tx.send(Ok(response));
+                                        }
+                                        break;
+                                    }
+                                    
+                                    // Small delay before trying again
+                                    thread::sleep(Duration::from_millis(50));
+                                },
+                                Err(e) => {
+                                    // Print error and send it back
+                                    println!("Error reading from stream: {}", e);
+                                    let _ = response_tx.send(Err("Error found".to_string()));
                                 }
                             }
                         }

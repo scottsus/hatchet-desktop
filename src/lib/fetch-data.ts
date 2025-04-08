@@ -22,8 +22,14 @@ import { SensorData, SensorDataWithId } from '../types/sensor-data';
 
 export async function fetchSensorData(): Promise<SensorDataWithId | null> {
   try {
-    const userId = 1; // Replace with your actual userId source
+    const userId = 89; // MUST MATCH THE THESIA DEVICE ID
     const response = await invoke<string>('fetch_last_position', { userId });
+    
+    // Check if response indicates an error
+    if (!response || response.includes("error")) {
+      console.log('Skipping function due to error response');
+      return null;
+    }
 
     const sensorData = response.trim();
     // Parse the response which should be in format: "userId:id,latitude,longitude,zi,zp,zic"

@@ -2,6 +2,7 @@ import asyncio
 import os
 import time
 import argparse
+import csv
 
 class DataStreamerPipe:
     b_stop = False
@@ -13,24 +14,41 @@ class DataStreamerPipe:
     SERVER_PORT = 8000
     
     @staticmethod
-    def read_data():
+    def read_data(file_path=None):
         """
         Read the data from the file and return the operator number.
+        The function can now handle both .decod.74h files and .csv files.
         """
-        file1 = "RawData_20240408_090001_000001_000001_001.decod.74h"
+        # Default file if none provided
+        if file_path is None:
+            # file_path = "RawData_20240408_090001_000001_000001_001.decod.74h"
+            file_path = "C:\Personal_Projects\hatchet-desktop\public\level.csv"
         
-        if os.path.exists(file1):
-            print(file1)
+        # Check if file exists
+        if os.path.exists(file_path):
+            print(f"Reading file: {file_path}")
         else:
-            file1 = os.path.join(".", os.path.basename(file1))
-            if os.path.exists(file1):
-                print(file1)
+            file_path = os.path.join(".", os.path.basename(file_path))
+            if os.path.exists(file_path):
+                print(f"Reading file: {file_path}")
             else:
-                print(f"Error. File [{file1}] doesn't exist")
+                print(f"Error. File [{file_path}] doesn't exist")
                 DataStreamerPipe.b_stop = True
                 return -1
         
-        with open(file1, 'r') as sr:
+        # Clear any existing data
+        DataStreamerPipe.messages_list = []
+        
+        # Check file type and process accordingly
+        if file_path.endswith('.csv'):
+            return DataStreamerPipe._process_csv_file(file_path)
+        else:
+            return DataStreamerPipe._process_decod_file(file_path)
+    
+    @staticmethod
+    def _process_decod_file(file_path):
+        """Process .decod.74h files"""
+        with open(file_path, 'r') as sr:
             table = sr.read()
             data = table.split('\n')
             DataStreamerPipe.messages_list = [p for p in data if len(p) > 0 and p[0] == '#']
@@ -39,15 +57,62 @@ class DataStreamerPipe:
         first = DataStreamerPipe.messages_list[0][1:3] if DataStreamerPipe.messages_list else None
         if first is not None:
             op = int(first, 16)
+
+        # Demo File init coords
+        lat = 41.87892716196967
+        lon = 12.508081927663124
         
-        return op
+        return op, lat, lon
     
     @staticmethod
-    async def start_async():
+    def _process_csv_file(file_path):
+        """Process CSV files by extracting the thesia_string column"""
+        try:
+            with open(file_path, 'r') as csv_file:
+                csv_reader = csv.DictReader(csv_file)
+                # Check if thesia_string column exists
+                if 'thesia_string' not in csv_reader.fieldnames:
+                    print(f"Error: 'thesia_string' column not found in {file_path}")
+                    DataStreamerPipe.b_stop = True
+                    return -1
+                
+                # Extract thesia_string values and coordinates
+                first_row_processed = False
+                for row in csv_reader:
+                    thesia_string = row.get('thesia_string', '').strip()
+                    if int(thesia_string, 16):
+                        # Add "#" prefix to each string
+                        DataStreamerPipe.messages_list.append(f"#{thesia_string}")
+                        
+                        # Extract Latitude and Longitude from the first message
+                        if not first_row_processed:
+                            try:
+                                print(thesia_string)
+                                # Check if latitude/longitude columns exist in CSV
+                                latitude = row.get('Latitude')
+                                longitude = row.get('Longitude')
+                                op = thesia_string[0:2]
+                                # Convert string hex to int dec
+                                op = int(op, 16)
+                                print(f"First row info: Latitude={latitude}, Longitude={longitude}, Operator={op}")
+                                first_row_processed = True
+                            except Exception as e:
+                                print(f"Error extracting coordinates: {e}")
+            
+            return op, latitude, longitude
+        except Exception as e:
+            print(f"Error processing CSV file: {e}")
+            DataStreamerPipe.b_stop = True
+            return -1
+    
+    @staticmethod
+    async def start_async(file_path=None):
         """
         Start the communication with the server using a single persistent connection.
+        Now accepts an optional file path parameter.
         """
-        op = DataStreamerPipe.read_data()
+        op, lat, lon = DataStreamerPipe.read_data(file_path)
+        print(f"Operator ID: {op}, Latitude: {lat}, Longitude: {lon}")
         if op < 0:
             return
         
@@ -69,14 +134,14 @@ class DataStreamerPipe:
                 await asyncio.sleep(0.2)
                 
                 # Set parameters
-                x0 = 2.5
-                y0 = -3.7
-                rot = 0.034906585039886591
-                w1 = 0.10
+                x0 = 0
+                y0 = 0
+                rot = 0.0
+                w1 = 0
                 w2 = 0
                 sel = 4
-                lat = 41.87892716196967
-                lon = 12.508081927663124
+                lat = lat
+                lon = lon
                 
                 params_command = f"SetParameters {op},{x0},{y0},{rot},{w1},{w2},{sel},{lat},{lon}\n"
                 print(f"Sending command: {params_command.strip()}")
@@ -204,9 +269,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Data Streamer Client")
     parser.add_argument("--track", "-t", action="store_true", 
                         help="Enable track data retrieval")
+    parser.add_argument("--file", "-f", type=str, default=None,
+                        help="Specify input file path (.decod.74h or .csv)")
     args = parser.parse_args()
     
     DataStreamerPipe.retrieve_track_enabled = args.track
     print(f"Track data retrieval: {'Enabled' if args.track else 'Disabled'}")
     
-    asyncio.run(DataStreamerPipe.start_async())
+    asyncio.run(DataStreamerPipe.start_async(args.file))
