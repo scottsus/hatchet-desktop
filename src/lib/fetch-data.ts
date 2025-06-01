@@ -2,25 +2,89 @@ import { invoke } from '@tauri-apps/api/tauri';
 
 import { SensorData, SensorDataWithId } from '../types/sensor-data';
 
-const HOST = 'localhost';
-const PORT = 8080;
+// export async function fetchSensorData(): Promise<SensorDataWithId | null> {
+//   try {
+//     const response = await invoke<string>('fetch_tcp_data');
+
+//     const sensorData = parseCSVToSensorDataV2(response.trim());
+//     const sensorDataWithId: SensorDataWithId = {
+//       ...sensorData,
+//       id: 'level.csv',
+//     };
+//     console.log('withId:', sensorDataWithId);
+
+//     return sensorDataWithId;
+//   } catch (error) {
+//     console.error('Connection error:', error);
+//     return null;
+//   }
+// }
 
 export async function fetchSensorData(): Promise<SensorDataWithId | null> {
-  console.log(`Connecting to ${HOST}:${PORT} via Tauri...`);
-
   try {
-    const response = await invoke<string>('fetch_tcp_data', {
-      host: HOST,
-      port: PORT,
-    });
+    const userId = 89; // MUST MATCH THE THESIA DEVICE ID
+    const response = await invoke<string>('fetch_last_position', { userId });
+    
+    // Check if response indicates an error
+    if (!response || response.includes("error")) {
+      console.log('Skipping function due to error response');
+      return null;
+    }
 
-    console.log('Received:', response);
-
-    const sensorData = parseCSVToSensorData(response.trim());
+    const sensorData = response.trim();
+    // Parse the response which should be in format: "userId:id,latitude,longitude,zi,zp,zic"
+    const parts = sensorData.split(':');
+    
+    if (parts.length !== 2) {
+      console.error('Invalid data format');
+      return null;
+    }
+    
+    const valuesStr = parts[1].split(',');
+    
+    if (valuesStr.length < 6) {
+      console.error('Insufficient data values');
+      return null;
+    }
+    
+    const latitude = parseFloat(valuesStr[1]);
+    const longitude = parseFloat(valuesStr[2]);
+    const zi = parseFloat(valuesStr[3]); // Inertial Altitude
+    const zp = parseFloat(valuesStr[4]); // Barometric Altitude
+    const zic = parseFloat(valuesStr[5]); // Inertial Altitude fused with Barometric
+    
     const sensorDataWithId: SensorDataWithId = {
-      ...sensorData,
-      id: 'level.csv',
+      id: userId,
+      Temperature: 25.5, // default value
+      Pressure: 1013.25, // default value
+      Altitude: zp, // Using barometric altitude
+      Day: new Date().getDate(),
+      Month: new Date().getMonth() + 1,
+      Year: new Date().getFullYear(),
+      Hour: new Date().getHours(),
+      Minute: new Date().getMinutes(),
+      Second: new Date().getSeconds(),
+      Latitude: latitude,
+      Longitude: longitude,
+      'Operator Id': userId,
+      'Message Counter': 0,
+      'Step Counter': 0,
+      Flags: 0,
+      'Position Estimation Inertial Magnetic X': 0,
+      'Position Estimation Inertial Magnetic Y': 0,
+      'Position Estimation Inertial X': 0,
+      'Position Estimation Inertial Y': 0,
+      'Position Estimation Inertial Z': zi, // Using inertial altitude for Z
+      'Altitude Estimation Pressometer': zp, // Using barometric altitude
+      'Latitude Estimation GPS': latitude,
+      'Longitude Estimation GPS': longitude,
+      'GPS Estimation Quality': 1,
+      'North Alignment Angle Inertial Path': 0,
+      'Yaw Drift Inertial Path': 0,
+      'CRC-CCITT': 0,
+      thesia_string: `zi:${zi},zp:${zp},zic:${zic}`,
     };
+    console.log('withId:', sensorDataWithId);
 
     return sensorDataWithId;
   } catch (error) {
@@ -28,6 +92,8 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     return null;
   }
 }
+
+
 
 function parseCSVToSensorData(row: string): SensorData {
   const values = row.split(',');
@@ -64,4 +130,86 @@ function parseCSVToSensorData(row: string): SensorData {
   };
 }
 
-// fetchSensorData().then(console.log);
+function parseCSVToSensorDataV2(row: string): SensorData {
+  // Extract data part after "data: " prefix if present
+  const dataString = row.startsWith('data: ') ? row.substring(6) : row;
+
+  const values = dataString.split(',');
+  const latitude = parseFloat(values[0]);
+  const longitude = parseFloat(values[1]);
+  const thesiaString = values[2] || '';
+
+  // Parse the thesia string if it exists and starts with #
+  let posX = 0;
+  let posY = 0;
+  let messageCounter = 1; // Default to 1 to ensure data is processed
+
+  if (thesiaString && thesiaString.startsWith('#')) {
+    // Remove the # prefix
+    const hexData = thesiaString.substring(1);
+
+    try {
+      // Extract position data from the hex string
+      // Assuming the format follows a specific pattern where:
+      // Position X is at bytes 22-25 (44-49 in hex string)
+      // Position Y is at bytes 26-29 (52-57 in hex string)
+      // These positions are estimates based on the sample data
+
+      // Extract X position (4 bytes)
+      if (hexData.length >= 50) {
+        const xHex = hexData.substring(44, 52);
+        // Convert from hex and handle two's complement for negative values
+        const xVal = parseInt(xHex, 16);
+        posX = xVal >= 0x80000000 ? xVal - 0x100000000 : xVal;
+        posX = posX / 100; // Scale factor (adjust as needed)
+      }
+
+      // Extract Y position (4 bytes)
+      if (hexData.length >= 58) {
+        const yHex = hexData.substring(52, 60);
+        // Convert from hex and handle two's complement for negative values
+        const yVal = parseInt(yHex, 16);
+        posY = yVal >= 0x80000000 ? yVal - 0x100000000 : yVal;
+        posY = posY / 100; // Scale factor (adjust as needed)
+      }
+
+      // Extract message counter (assuming it's at a specific position)
+      if (hexData.length >= 16) {
+        messageCounter = parseInt(hexData.substring(12, 16), 16);
+      }
+    } catch (error) {
+      console.error('Error parsing thesia string:', error);
+    }
+  }
+
+  return {
+    Temperature: 25.5, // mocked
+    Pressure: 1013.25, // mocked
+    Altitude: 100, // mocked
+    Day: new Date().getDate(),
+    Month: new Date().getMonth() + 1,
+    Year: new Date().getFullYear(),
+    Hour: new Date().getHours(),
+    Minute: new Date().getMinutes(),
+    Second: new Date().getSeconds(),
+    Latitude: latitude, // real data
+    Longitude: longitude, // real data
+    'Operator Id': 1, // mocked
+    'Message Counter': messageCounter, // extracted from thesia string
+    'Step Counter': 0, // mocked
+    Flags: 0, // mocked
+    'Position Estimation Inertial Magnetic X': 0, // mocked
+    'Position Estimation Inertial Magnetic Y': 0, // mocked
+    'Position Estimation Inertial X': posX, // extracted from thesia string
+    'Position Estimation Inertial Y': posY, // extracted from thesia string
+    'Position Estimation Inertial Z': 0, // mocked
+    'Altitude Estimation Pressometer': 0, // mocked
+    'Latitude Estimation GPS': latitude, // same as Latitude
+    'Longitude Estimation GPS': longitude, // same as Longitude
+    'GPS Estimation Quality': 1, // mocked
+    'North Alignment Angle Inertial Path': 0, // mocked
+    'Yaw Drift Inertial Path': 0, // mocked
+    'CRC-CCITT': 0, // mocked
+    thesia_string: thesiaString, // store original thesia string
+  };
+}

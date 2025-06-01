@@ -34,3 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## How to run MOCK Demo with Data streamer
+Have 3 windows open, run the programs in this order
+1. .\AriannaServer.exe TcpIp -Port 8000
+2. py DataStreamer.py
+3. yarn tauri dev
+
+DataStreamer located in scripts folder (NOT the google drive one that fabrizio gave, I made my own)
+
+AriannaServer get here [Google Drive Link](https://drive.google.com/drive/folders/1nL_LC-a1zWB0PO7IXJNdl2KyAP54Jtga?usp=sharing)

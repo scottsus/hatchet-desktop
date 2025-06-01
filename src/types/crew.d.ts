@@ -1,7 +1,7 @@
 import { SensorData } from './sensor-data';
 
 export interface CrewMember {
-  id: string;
+  id: number;
   name: string;
   initials: string;
   color: string;

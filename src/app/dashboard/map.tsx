@@ -1,7 +1,7 @@
 'use client';
 
 import { FireFighterCircle } from '@/src/components/ff-circle';
-import { DEMO_INITIAL_CENTER } from '@/src/env';
+import { DEMO_INITIAL_CENTER, USE_ACTUAL_TCP_SERVER } from '@/src/env';
 import { calcCoordinates } from '@/src/lib/calc-coordinates';
 import { RouteIcon, SatelliteIcon } from 'lucide-react';
 import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
@@ -147,7 +147,7 @@ export function Map({}: {}) {
     lngLat,
     markers,
   }: {
-    id: string;
+    id: number;
     initials: string;
     color: string;
     lngLat: LngLatLike;
@@ -216,16 +216,25 @@ export function Map({}: {}) {
     if (!sensorDataWithCrew) {
       return;
     }
-
     const { sensorData, crewMember } = sensorDataWithCrew;
-    if (crewMember.thesia_count <= 0) {
-      return;
+    let coordinates: LngLatLike = [0, 0]; // Initialize with default values to match LngLatLike
+    if(USE_ACTUAL_TCP_SERVER){
+      coordinates = [sensorData.Longitude, sensorData.Latitude];
     }
+    else
+    {
+      if (crewMember.thesia_count <= 0) {
+        return;
+      }
+    
+      coordinates = calcCoordinates({
+        data: sensorData,
+        member: crewMember,
+      }).coordinates;
+    }
+    console.log("HELLO??")
 
-    const { coordinates } = calcCoordinates({
-      data: sensorData,
-      member: crewMember,
-    });
+    console.log('coordinates ON MAP:', coordinates);
 
     // 👣 render path
     if (!coordinatesRef.current[crewMember.id]) {
