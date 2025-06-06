@@ -1,5 +1,8 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::collections::HashSet;
+use std::net::TcpListener;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use std::sync::{Arc, Mutex}; // Removed Once as it's unused
 use tauri::{command, State}; // Removed Manager as it's unused
@@ -10,6 +13,156 @@ use lazy_static::lazy_static; // Use the lazy_static crate instead of std::lazy
 const SERVER_IP: &str = "127.0.0.1";
 const SERVER_PORT: u16 = 8000;
 const BUFFER_SIZE: usize = 1024;
+
+// Add this function after the DataStreamerConnection implementation
+fn process_hash_line(
+    line: &str, 
+    server_connection: &SharedConnection, 
+    initialized_operators: &Arc<Mutex<HashSet<u8>>>
+) {
+    if let Some(hex_op_id) = line.get(1..3) {
+        // Convert from hex to decimal
+        if let Ok(operator_id) = u8::from_str_radix(hex_op_id, 16) {
+            println!("Found operator ID: {} (hex: {})", operator_id, hex_op_id);
+            
+            // Check if we've seen this operator ID before
+            let mut ops = initialized_operators.lock().unwrap();
+            if !ops.contains(&operator_id) {
+                println!("New operator ID discovered, initializing: {}", operator_id);
+                
+                // Use existing functions to initialize this operator
+                let mut conn = server_connection.lock().unwrap();
+                
+                // Initialize the user
+                match conn.send_command(format!("Init {}\n", operator_id)) {
+                    Ok(_) => {
+                        println!("Operator {} initialized", operator_id);
+                        
+                        // Set default parameters
+                        match conn.send_command(format!(
+                            "SetParameters {} {} {} {} {} {} {} {} {}\n",
+                            operator_id, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 0.0, 0.0
+                        )) {
+                            Ok(_) => {
+                                println!("Parameters set for operator {}", operator_id);
+                                // Mark as initialized
+                                ops.insert(operator_id);
+                            },
+                            Err(e) => println!("Failed to set parameters for operator {}: {}", operator_id, e)
+                        }
+                    },
+                    Err(e) => println!("Failed to initialize operator {}: {}", operator_id, e)
+                }
+            }
+        }
+    }
+}
+
+// After your TcpConnection implementation
+struct DataStreamerConnection {
+    listener: Option<TcpListener>,
+    is_running: Arc<AtomicBool>,
+    initialized_operators: Arc<Mutex<HashSet<u8>>>,
+}
+
+impl DataStreamerConnection {
+    fn new() -> Self {
+        DataStreamerConnection {
+            listener: None,
+            is_running: Arc::new(AtomicBool::new(false)),
+            initialized_operators: Arc::new(Mutex::new(HashSet::new())),
+        }
+    }
+    
+    fn start_listening(&mut self, ip: String, port: u16, server_connection: SharedConnection) -> Result<(), String> {
+        // Skip if already running
+        if self.is_running.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        
+        // Set up the listener
+        let address = format!("{}:{}", ip, port);
+        let listener = TcpListener::bind(&address)
+            .map_err(|e| format!("Failed to bind to {}:{}: {}", ip, port, e))?;
+            
+        self.listener = Some(listener);
+        self.is_running.store(true, Ordering::SeqCst);
+        
+        // Clone what we need for the thread
+        let listener_clone = self.listener.as_ref().unwrap().try_clone()
+            .map_err(|e| format!("Failed to clone listener: {}", e))?;
+        let is_running = self.is_running.clone();
+        let initialized_operators = self.initialized_operators.clone();
+        let server_conn = server_connection.clone();
+        let address_clone = address.clone();
+        
+        // Start the listener thread
+        thread::spawn(move || {
+            println!("Data streamer listener started on {}", address_clone);
+            
+            while is_running.load(Ordering::SeqCst) {
+                // Try to accept a connection
+                match listener_clone.accept() {
+                    Ok((mut stream, addr)) => {
+                        println!("New data streamer connection from: {}", addr);
+                        
+                        // Clone what we need for this connection's thread
+                        let server_conn_clone = server_conn.clone();
+                        let initialized_ops_clone = initialized_operators.clone();
+                        let is_running_clone = is_running.clone();
+                        
+                        thread::spawn(move || {
+                            let mut buffer = [0; BUFFER_SIZE];
+                            
+                            while is_running_clone.load(Ordering::SeqCst) {
+                                match stream.read(&mut buffer) {
+                                    Ok(0) => {
+                                        println!("Data streamer connection closed");
+                                        break;
+                                    },
+                                    Ok(bytes_read) => {
+                                        let data = String::from_utf8_lossy(&buffer[..bytes_read]);
+                                        
+                                        // Process each line
+                                        for line in data.lines() {
+                                            if line.starts_with('#') {
+                                                process_hash_line(line, &server_conn_clone, &initialized_ops_clone);
+                                            }
+                                        }
+                                    },
+                                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock 
+                                              || e.kind() == std::io::ErrorKind::TimedOut => {
+                                        thread::sleep(Duration::from_millis(50));
+                                    },
+                                    Err(e) => {
+                                        println!("Error reading from data streamer: {}", e);
+                                        break;
+                                    }
+                                }
+                            }
+                            println!("Data streamer connection handler terminated");
+                        });
+                    },
+                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(100));
+                    },
+                    Err(e) => {
+                        println!("Error accepting connection: {}", e);
+                        thread::sleep(Duration::from_secs(1));
+                    }
+                }
+            }
+            println!("Data streamer listener stopped");
+        });
+        
+        Ok(())
+    }
+    
+    fn stop_listening(&mut self) {
+        self.is_running.store(false, Ordering::SeqCst);
+        println!("Data streamer listener stopping...");
+    }
+}
 
 // Structure to manage our TCP connection
 struct TcpConnection {
@@ -205,8 +358,25 @@ type SharedConnection = Arc<Mutex<TcpConnection>>;
 
 struct AppState {
     connection: SharedConnection,
+    data_streamer: Arc<Mutex<DataStreamerConnection>>,
 }
 
+// Data Streamer commands
+#[command]
+fn start_data_streamer(ip: String, port: u16, state: State<AppState>) -> Result<String, String> {
+    let mut data_streamer = state.data_streamer.lock().unwrap();
+    data_streamer.start_listening(ip.clone(), port, state.connection.clone())?;
+    Ok(format!("Data streamer listening on {}:{}", ip, port))
+}
+
+#[command]
+fn stop_data_streamer(state: State<AppState>) -> Result<String, String> {
+    let mut data_streamer = state.data_streamer.lock().unwrap();
+    data_streamer.stop_listening();
+    Ok("Data streamer stopped".to_string())
+}
+
+// AriannaSrv commands
 #[command]
 fn initialize_user(user_id: u8, state: State<AppState>) -> Result<String, String> {
     let command = format!("Init {}\n", user_id);
@@ -274,13 +444,19 @@ fn main() {
     // Create a shared connection
     let connection = Arc::new(Mutex::new(TcpConnection::new()));
     
+    // Create a data streamer connection
+    let data_streamer = Arc::new(Mutex::new(DataStreamerConnection::new()));
+    
     // Try to connect initially (optional)
     if let Err(e) = connection.lock().unwrap().connect() {
         println!("Initial connection failed: {}. Will retry when needed.", e);
     }
     
     tauri::Builder::default()
-        .manage(AppState { connection })
+        .manage(AppState { 
+            connection,
+            data_streamer 
+        })
         .invoke_handler(tauri::generate_handler![
             initialize_user,
             set_parameters,
@@ -288,7 +464,9 @@ fn main() {
             clear_all,
             set_message,
             fetch_all_position,
-            fetch_last_position
+            fetch_last_position,
+            start_data_streamer,
+            stop_data_streamer
         ])
         .setup(|_app| {
             // Optionally set up a reconnection timer or other initialization
@@ -297,7 +475,7 @@ fn main() {
         .on_window_event(|event| {
             // Clean up connection when app is closed
             if let tauri::WindowEvent::CloseRequested { .. } = event.event() {
-                println!("Application closing, cleaning up TCP connection...");
+                println!("Application closing, cleaning up connections...");
             }
         })
         .run(tauri::generate_context!())

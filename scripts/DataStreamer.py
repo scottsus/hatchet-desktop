@@ -11,7 +11,7 @@ class DataStreamerPipe:
     
     # Server connection details
     SERVER_IP = "127.0.0.1"
-    SERVER_PORT = 8000
+    SERVER_PORT = 80
     
     @staticmethod
     def read_data(file_path=None):
@@ -22,6 +22,7 @@ class DataStreamerPipe:
         # Default file if none provided
         if file_path is None:
             # file_path = "RawData_20240408_090001_000001_000001_001.decod.74h"
+            # file_path = "Phone_Data_Log_89.74h"
             file_path = "C:\Personal_Projects\hatchet-desktop\public\level.csv"
         
         # Check if file exists

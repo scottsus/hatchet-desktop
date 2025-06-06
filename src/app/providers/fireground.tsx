@@ -2,6 +2,8 @@ import {
   DEMO_INITIAL_CENTER,
   INTERVAL,
   USE_ACTUAL_TCP_SERVER,
+  RAW_DATA_TCP_IP,
+  RAW_DATA_TCP_PORT,
 } from '@/src/env';
 import {
   sensorDataQueue,
@@ -21,6 +23,7 @@ import {
 } from 'react';
 
 import { CallDetails } from '../dashboard/call';
+import { invoke } from '@tauri-apps/api/tauri';
 
 type FiregroundContextType = {
   callDetails: CallDetails;
@@ -94,9 +97,19 @@ export function FiregroundProvider({
   };
 
   useEffect(() => {
-    if (!USE_ACTUAL_TCP_SERVER) {
-      startMockedLoadDataAndStartStreaming();
-    }
+    const setupDataSource = async () => {
+      if (USE_ACTUAL_TCP_SERVER) {
+        // Start the data streamer via Tauri invoke
+        await invoke('start_data_streamer', { 
+          ip: RAW_DATA_TCP_IP, 
+          port: RAW_DATA_TCP_PORT 
+        });
+      } else {
+        startMockedLoadDataAndStartStreaming();
+      }
+    };
+    
+    setupDataSource();
 
     const interval = setInterval(async () => {
       let sensorData: any;
