@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext", "WebWorker"],
+    "types": ["vite/client", "node"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

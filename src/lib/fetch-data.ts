@@ -23,6 +23,15 @@ import { SensorData, SensorDataWithId } from '../types/sensor-data';
 export async function fetchSensorData(): Promise<SensorDataWithId | null> {
   try {
     const userId = 89; // MUST MATCH THE THESIA DEVICE ID
+    
+    // First check if the user is initialized in the server
+    const isInitialized = await invoke<boolean>('is_user_initialized', { userId });
+    
+    if (!isInitialized) {
+      console.log(`User ${userId} not initialized in server. Skipping data fetch.`);
+      return null;
+    }
+    
     const response = await invoke<string>('fetch_last_position', { userId });
     
     // Check if response indicates an error
@@ -32,7 +41,7 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     }
 
     const sensorData = response.trim();
-    // Parse the response which should be in format: "userId:id,latitude,longitude,zi,zp,zic"
+    // Parse the response which should be in format: "userId:msgcount,latitude,longitude,zi,zp,zic"
     const parts = sensorData.split(':');
     
     if (parts.length !== 2) {
@@ -42,11 +51,13 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     
     const valuesStr = parts[1].split(',');
     
-    if (valuesStr.length < 6) {
+    if (valuesStr.length < 5) {
       console.error('Insufficient data values');
       return null;
     }
     
+    const userIdResp = parseInt(parts[0]);
+    const msg_counter = parseInt(valuesStr[0]);
     const latitude = parseFloat(valuesStr[1]);
     const longitude = parseFloat(valuesStr[2]);
     const zi = parseFloat(valuesStr[3]); // Inertial Altitude
@@ -54,7 +65,7 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     const zic = parseFloat(valuesStr[5]); // Inertial Altitude fused with Barometric
     
     const sensorDataWithId: SensorDataWithId = {
-      id: userId,
+      id: userIdResp,
       Temperature: 25.5, // default value
       Pressure: 1013.25, // default value
       Altitude: zp, // Using barometric altitude
@@ -66,8 +77,8 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
       Second: new Date().getSeconds(),
       Latitude: latitude,
       Longitude: longitude,
-      'Operator Id': userId,
-      'Message Counter': 0,
+      'Operator Id': userIdResp,
+      'Message Counter': msg_counter,
       'Step Counter': 0,
       Flags: 0,
       'Position Estimation Inertial Magnetic X': 0,

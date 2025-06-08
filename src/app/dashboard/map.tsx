@@ -223,16 +223,8 @@ export function Map({}: {}) {
     }
     else
     {
-      if (crewMember.thesia_count <= 0) {
-        return;
-      }
-    
-      coordinates = calcCoordinates({
-        data: sensorData,
-        member: crewMember,
-      }).coordinates;
+      return; // Skip if not using actual TCP server
     }
-    console.log("HELLO??")
 
     console.log('coordinates ON MAP:', coordinates);
 
