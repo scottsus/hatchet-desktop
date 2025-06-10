@@ -22,20 +22,25 @@ import { SensorData, SensorDataWithId } from '../types/sensor-data';
 
 export async function fetchSensorData(): Promise<SensorDataWithId | null> {
   try {
-    const userId = 89; // MUST MATCH THE THESIA DEVICE ID
-    
+    const userId = 89;
+
     // First check if the user is initialized in the server
-    const isInitialized = await invoke<boolean>('is_user_initialized', { userId });
-    
+    const isInitialized = await invoke<boolean>('is_user_initialized', {
+      userId,
+    });
+
     if (!isInitialized) {
-      console.log(`User ${userId} not initialized in server. Skipping data fetch.`);
+      console.log(
+        `User ${userId} not initialized in server. Skipping data fetch.`,
+      );
       return null;
     }
-    
+
     const response = await invoke<string>('fetch_last_position', { userId });
-    
+    console.log('scott_response:', response);
+
     // Check if response indicates an error
-    if (!response || response.includes("error")) {
+    if (!response || response.includes('error')) {
       console.log('Skipping function due to error response');
       return null;
     }
@@ -43,19 +48,19 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     const sensorData = response.trim();
     // Parse the response which should be in format: "userId:msgcount,latitude,longitude,zi,zp,zic"
     const parts = sensorData.split(':');
-    
+
     if (parts.length !== 2) {
       console.error('Invalid data format');
       return null;
     }
-    
+
     const valuesStr = parts[1].split(',');
-    
+
     if (valuesStr.length < 5) {
       console.error('Insufficient data values');
       return null;
     }
-    
+
     const userIdResp = parseInt(parts[0]);
     const msg_counter = parseInt(valuesStr[0]);
     const latitude = parseFloat(valuesStr[1]);
@@ -63,7 +68,7 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     const zi = parseFloat(valuesStr[3]); // Inertial Altitude
     const zp = parseFloat(valuesStr[4]); // Barometric Altitude
     const zic = parseFloat(valuesStr[5]); // Inertial Altitude fused with Barometric
-    
+
     const sensorDataWithId: SensorDataWithId = {
       id: userIdResp,
       Temperature: 25.5, // default value
@@ -103,8 +108,6 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
     return null;
   }
 }
-
-
 
 function parseCSVToSensorData(row: string): SensorData {
   const values = row.split(',');
