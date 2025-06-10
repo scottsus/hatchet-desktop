@@ -1,16 +1,16 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 
-import './globals.css';
+import "./globals.css";
 
-import { Sidebar } from '../components/sidebar';
-import { cn } from '../lib/utils';
+import { Sidebar } from "../components/sidebar";
+import { cn } from "../lib/utils";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '🪓 Hatchet',
-  description: 'Firefighting Safety - Reimagined',
+  title: "🪓 Hatchet",
+  description: "Firefighting Safety - Reimagined",
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={cn(
-          'flex bg-bg-gray-1 min-h-screen text-text-default text-sm font-normal',
+          "flex min-h-screen bg-bg-gray-1 text-sm font-normal text-text-default",
           inter.className,
         )}
       >

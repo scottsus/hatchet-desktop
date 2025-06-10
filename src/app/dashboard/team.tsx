@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import './dashboard.css';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import "./dashboard.css";
+import "mapbox-gl/dist/mapbox-gl.css";
 
-import { ProgressBar } from '@/src/components/progress';
-import { IS_DEMO } from '@/src/env';
-import { mockedTeams } from '@/src/lib/mocks';
-import { cn } from '@/src/lib/utils';
-import type { CrewMember, Team } from '@/src/types/crew';
+import { ProgressBar } from "@/src/components/progress";
+import { IS_DEMO } from "@/src/env";
+import { mockedTeams } from "@/src/lib/mocks";
+import { cn } from "@/src/lib/utils";
+import type { CrewMember, Team } from "@/src/types/crew";
 import {
   closestCenter,
   closestCorners,
@@ -20,15 +20,15 @@ import {
   useDroppable,
   useSensor,
   useSensors,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   BatteryFullIcon,
   BatteryMediumIcon,
@@ -41,12 +41,12 @@ import {
   SquarePlusIcon,
   TargetIcon,
   UsersIcon,
-} from 'lucide-react';
-import { LngLatLike } from 'mapbox-gl';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { SyncLoader } from 'react-spinners';
+} from "lucide-react";
+import { LngLatLike } from "mapbox-gl";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { SyncLoader } from "react-spinners";
 
-import { useFireground } from '../providers/fireground';
+import { useFireground } from "../providers/fireground";
 
 const USE_MORE_METRICS = false;
 
@@ -123,8 +123,8 @@ function Team({ name, crew }: { name: string; crew: CrewMember[] }) {
         <button className="ml-auto mr-0" onClick={toggleCollapseButton}>
           <ChevronDownIcon
             className={cn(
-              'transition-all',
-              isCollapsed ? 'rotate-0' : '-rotate-180',
+              "transition-all",
+              isCollapsed ? "rotate-0" : "-rotate-180",
             )}
             size={18}
           />
@@ -160,9 +160,9 @@ function CrewMember({
   const [isExpanded, setIsExpanded] = useState(false);
   const toggleExpansion = () => setIsExpanded((isExpanded) => !isExpanded);
   const signalColors = {
-    low: '#C55D4C',
-    med: '#CEA064',
-    high: '#9CF984',
+    low: "#C55D4C",
+    med: "#CEA064",
+    high: "#9CF984",
   };
 
   const onClickReCenter = () => {
@@ -236,8 +236,8 @@ function CrewMember({
         {USE_MORE_METRICS && (
           <div
             className={cn(
-              'col-span-5 overflow-hidden transition-all',
-              isExpanded ? 'opacity-100' : 'max-h-0 opacity-0',
+              "col-span-5 overflow-hidden transition-all",
+              isExpanded ? "opacity-100" : "max-h-0 opacity-0",
             )}
           >
             <div className="flex w-[90%] flex-col gap-2 gap-y-2">
@@ -263,8 +263,8 @@ function CrewMember({
         <button onClick={toggleExpansion} className="mt-2">
           <ChevronRightIcon
             className={cn(
-              'text-primary transition-all',
-              isExpanded && 'rotate-90',
+              "text-primary transition-all",
+              isExpanded && "rotate-90",
             )}
             size={18}
           />
@@ -289,11 +289,11 @@ function Timer({ time }: { time: number }) {
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
       .toString()
-      .padStart(2, '0');
+      .padStart(2, "0");
     const minutes = Math.floor((seconds % 3600) / 60)
       .toString()
-      .padStart(2, '0');
-    const secs = (seconds % 60).toString().padStart(2, '0');
+      .padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
     return `${hours}:${minutes}:${secs}`;
   };
 

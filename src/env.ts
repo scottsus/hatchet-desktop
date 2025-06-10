@@ -1,6 +1,6 @@
 export const INTERVAL = 1000; // 50ms
 
-export const IS_DEMO = process.env.DEV === 'scottsus' ? false : true;
+export const IS_DEMO = process.env.DEV === "scottsus" ? false : true;
 
 export const USE_CALL_HEADER = false;
 

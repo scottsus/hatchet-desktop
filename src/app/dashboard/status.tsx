@@ -1,5 +1,5 @@
-import { mockedTeams } from '@/src/lib/mocks';
-import { RefreshCwIcon } from 'lucide-react';
+import { mockedTeams } from "@/src/lib/mocks";
+import { RefreshCwIcon } from "lucide-react";
 
 export function OverallStatus() {
   const teams = mockedTeams;
@@ -8,13 +8,13 @@ export function OverallStatus() {
     (acc, team) => {
       team.crew.forEach((crewMember) => {
         switch (crewMember.signalStrength) {
-          case 'high':
+          case "high":
             acc.high++;
             break;
-          case 'med':
+          case "med":
             acc.med++;
             break;
-          case 'low':
+          case "low":
             acc.low++;
             break;
         }

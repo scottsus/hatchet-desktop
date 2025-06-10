@@ -1,17 +1,17 @@
-import { FireFighterCircle } from '@/src/components/ff-circle';
-import { USE_DISTINCT_FLOORS_FOR_ELEVATION } from '@/src/env';
-import { cn } from '@/src/lib/utils';
-import { CrewMember } from '@/src/types/crew';
-import { LockIcon, UsersIcon } from 'lucide-react';
-import { useCallback } from 'react';
+import { FireFighterCircle } from "@/src/components/ff-circle";
+import { USE_DISTINCT_FLOORS_FOR_ELEVATION } from "@/src/env";
+import { cn } from "@/src/lib/utils";
+import { CrewMember } from "@/src/types/crew";
+import { LockIcon, UsersIcon } from "lucide-react";
+import { useCallback } from "react";
 
-import { useFireground } from '../providers/fireground';
+import { useFireground } from "../providers/fireground";
 
 const TOPMOST_FLOOR = 4;
 const floorColors: { [key: number]: string } = {
-  1: '#3880A9',
-  2: '#9259A0',
-  3: '#AE8C5A',
+  1: "#3880A9",
+  2: "#9259A0",
+  3: "#AE8C5A",
 };
 const PRESSOMETER_WEIGHT = 0.7;
 const INERTIAL_WEIGHT = 0.3;
@@ -39,11 +39,11 @@ export function Elevation() {
   function getVerticalPosition(member: CrewMember): string {
     const sensorData = getLatestSensorData(member.id);
     if (!sensorData) {
-      return '';
+      return "";
     }
 
-    const pressometer = sensorData['Altitude Estimation Pressometer'];
-    const inertialZ = sensorData['Position Estimation Inertial Z'];
+    const pressometer = sensorData["Altitude Estimation Pressometer"];
+    const inertialZ = sensorData["Position Estimation Inertial Z"];
     const altitude =
       pressometer * PRESSOMETER_WEIGHT + inertialZ * INERTIAL_WEIGHT;
 
@@ -99,7 +99,7 @@ export function Elevation() {
                   initials={member.initials}
                   color={member.color}
                   style={{
-                    position: 'absolute',
+                    position: "absolute",
                     left: getHorizontalPosition(idx),
                     bottom: getVerticalPosition(member),
                   }}
@@ -121,7 +121,7 @@ function TeamBadge({ name, color }: { name: string; color: string }) {
   );
 }
 
-function FloorLevel({ level }: { level: 'Roof' | number }) {
+function FloorLevel({ level }: { level: "Roof" | number }) {
   const { teams } = useFireground();
 
   const getCrewOnLevels = useCallback(() => {
@@ -135,12 +135,12 @@ function FloorLevel({ level }: { level: 'Roof' | number }) {
       team.crew.forEach((member) => {
         const altitude = Number(
           member.sensorData[member.sensorData.length - 1]?.[
-            'Altitude Estimation Pressometer'
+            "Altitude Estimation Pressometer"
           ],
         );
         const position = Number(
           member.sensorData[member.sensorData.length - 1]?.[
-            'Position Estimation Inertial Z'
+            "Position Estimation Inertial Z"
           ],
         );
 
@@ -152,8 +152,8 @@ function FloorLevel({ level }: { level: 'Roof' | number }) {
       });
     });
 
-    const getCrewOnLevel = (level: 'Roof' | number) => {
-      const levelIndex = level === 'Roof' ? 0 : level;
+    const getCrewOnLevel = (level: "Roof" | number) => {
+      const levelIndex = level === "Roof" ? 0 : level;
       return crewByLevel[levelIndex] || [];
     };
 
@@ -161,7 +161,7 @@ function FloorLevel({ level }: { level: 'Roof' | number }) {
   }, [teams]);
 
   const loadCrew = getCrewOnLevels();
-  const crew = loadCrew(level === 'Roof' ? TOPMOST_FLOOR : level);
+  const crew = loadCrew(level === "Roof" ? TOPMOST_FLOOR : level);
 
   return (
     <div className="relative flex w-full flex-col">
@@ -169,11 +169,11 @@ function FloorLevel({ level }: { level: 'Roof' | number }) {
         <p>{crew.length}</p>
       </div>
 
-      {level !== 'Roof' && (
+      {level !== "Roof" && (
         <div
           className={cn(
-            'mt-3 flex w-full flex-col gap-y-8',
-            level !== 1 && 'pb-12',
+            "mt-3 flex w-full flex-col gap-y-8",
+            level !== 1 && "pb-12",
           )}
         >
           <div className="flex items-center justify-around">

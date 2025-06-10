@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { USE_CALL_HEADER } from '@/src/env';
+import { USE_CALL_HEADER } from "@/src/env";
 
-import { FiregroundProvider } from '../providers/fireground';
-import { CallDetails } from './call';
-import { Elevation } from './elevation';
-import { Info } from './info';
-import { Map } from './map';
-import { OverallStatus } from './status';
-import { Teams } from './team';
+import { FiregroundProvider } from "../providers/fireground";
+import { CallDetails } from "./call";
+import { Elevation } from "./elevation";
+import { Info } from "./info";
+import { Map } from "./map";
+import { OverallStatus } from "./status";
+import { Teams } from "./team";
 
 export default function Dashboard() {
   return (

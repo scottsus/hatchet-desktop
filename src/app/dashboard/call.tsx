@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { IS_DEMO } from '@/src/env';
-import { cn } from '@/src/lib/utils';
-import { ChevronDownIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { SyncLoader } from 'react-spinners';
+import { IS_DEMO } from "@/src/env";
+import { cn } from "@/src/lib/utils";
+import { ChevronDownIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { SyncLoader } from "react-spinners";
 
-import { useFireground } from '../providers/fireground';
+import { useFireground } from "../providers/fireground";
 
 export type CallDetails = {
   callType: string;
@@ -57,8 +57,8 @@ export function CallDetails() {
             <button onClick={toggleCollapseButton}>
               <ChevronDownIcon
                 className={cn(
-                  'transition-all',
-                  isCollapsed ? 'rotate-0' : '-rotate-180',
+                  "transition-all",
+                  isCollapsed ? "rotate-0" : "-rotate-180",
                 )}
               />
             </button>
@@ -76,7 +76,7 @@ export function CallDetails() {
                 <div>{cross}</div>
 
                 <div className="text-text-muted">Units:</div>
-                <div>{units.join(', ')}</div>
+                <div>{units.join(", ")}</div>
 
                 <div className="text-text-muted">Date:</div>
                 <div>{date}</div>

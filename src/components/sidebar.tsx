@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import logo from '@/public/HatchetLogo.svg';
-import { ClipboardListIcon, ContactIcon, TargetIcon } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useSelectedLayoutSegments } from 'next/navigation';
-import { useMemo } from 'react';
+import logo from "@/public/HatchetLogo.svg";
+import { ClipboardListIcon, ContactIcon, TargetIcon } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useSelectedLayoutSegments } from "next/navigation";
+import { useMemo } from "react";
 
-import { cn } from '../lib/utils';
+import { cn } from "../lib/utils";
 
 export function Sidebar() {
   const segments = useSelectedLayoutSegments();
@@ -23,10 +23,10 @@ export function Sidebar() {
           <Link key={item.title} href={item.href}>
             <button
               className={cn(
-                'cursor-pointer rounded border p-2 transition-all hover:border-white hover:text-white',
+                "cursor-pointer rounded border p-2 transition-all hover:border-white hover:text-white",
                 item.isActive
-                  ? 'border-primary bg-primary/20 text-primary'
-                  : 'border-bg-gray-5 text-bg-gray-5',
+                  ? "border-primary bg-primary/20 text-primary"
+                  : "border-bg-gray-5 text-bg-gray-5",
               )}
             >
               <span>{item.icon}</span>
@@ -41,21 +41,21 @@ export function Sidebar() {
 function getSidebarItems({ segments }: { segments: string[] }) {
   return [
     {
-      title: 'Active Call',
-      href: '/calls',
-      isActive: segments.includes('active-call'),
+      title: "Active Call",
+      href: "/calls",
+      isActive: segments.includes("active-call"),
       icon: <ClipboardListIcon />,
     },
     {
-      title: 'Dashboard',
-      href: '/dashboard',
-      isActive: segments.includes('dashboard'),
+      title: "Dashboard",
+      href: "/dashboard",
+      isActive: segments.includes("dashboard"),
       icon: <TargetIcon />,
     },
     {
-      title: 'Sensor',
-      href: '/sensor',
-      isActive: segments.includes('sensor'),
+      title: "Sensor",
+      href: "/sensor",
+      isActive: segments.includes("sensor"),
       icon: <ContactIcon />,
     },
   ];

@@ -1,18 +1,18 @@
-import { DEMO_INITIAL_CENTER } from '@/src/env';
-import { listenForSensorUpdates } from '@/src/lib/fetch-data';
-import { mockedCallDetails } from '@/src/lib/mocks';
-import { CrewMember, Team } from '@/src/types/crew';
-import { SensorDataV2, SensorDataWithCrew } from '@/src/types/sensor-data';
-import { LngLatLike } from 'mapbox-gl';
+import { DEMO_INITIAL_CENTER } from "@/src/env";
+import { listenForSensorUpdates } from "@/src/lib/fetch-data";
+import { mockedCallDetails } from "@/src/lib/mocks";
+import { CrewMember, Team } from "@/src/types/crew";
+import { SensorDataV2, SensorDataWithCrew } from "@/src/types/sensor-data";
+import { LngLatLike } from "mapbox-gl";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useState,
-} from 'react';
+} from "react";
 
-import { CallDetails } from '../dashboard/call';
+import { CallDetails } from "../dashboard/call";
 
 // Context type definition
 type FiregroundContextType = {
@@ -130,9 +130,9 @@ export function FiregroundProvider({
               id: memberId,
               name: `Firefighter ${memberId}`,
               initials: `FF${memberId}`,
-              color: memberId === 89 ? '#9259A0' : '#AE8C5A',
-              time: '0:0:0',
-              signalStrength: 'high' as const,
+              color: memberId === 89 ? "#9259A0" : "#AE8C5A",
+              time: "0:0:0",
+              signalStrength: "high" as const,
               temperature: 0,
               thesia_count: 0,
               relative_elevation: 1,
@@ -164,7 +164,7 @@ export function FiregroundProvider({
           updateSensorData(member, sensorData);
         });
       } catch (error) {
-        console.error('Failed to setup sensor listener:', error);
+        console.error("Failed to setup sensor listener:", error);
       }
     };
 
@@ -197,7 +197,7 @@ export function FiregroundProvider({
 export function useFireground() {
   const context = useContext(FiregroundContext);
   if (!context) {
-    throw new Error('useFireground must be used within a FiregroundProvider');
+    throw new Error("useFireground must be used within a FiregroundProvider");
   }
   return context;
 }

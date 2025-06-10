@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { invoke } from '@tauri-apps/api';
-import { useEffect, useState } from 'react';
+import { invoke } from "@tauri-apps/api";
+import { useEffect, useState } from "react";
 
 export function Map() {
   const [coordinates, setCoordinates] = useState<string[]>([]);
@@ -9,10 +9,10 @@ export function Map() {
   useEffect(() => {
     const fetchCoordinates = async () => {
       try {
-        const result = await invoke<string>('get_coordinates');
+        const result = await invoke<string>("get_coordinates");
         setCoordinates((prev) => [...prev, result]);
       } catch (err) {
-        console.error('Error:', err);
+        console.error("Error:", err);
       }
     };
 

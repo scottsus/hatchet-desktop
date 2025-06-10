@@ -36,7 +36,9 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
 ## How to run MOCK Demo with Data streamer
+
 Have 3 windows open, run the programs in this order
+
 1. .\AriannaServer.exe TcpIp -Port 8000
 2. py DataStreamer.py
 3. yarn tauri dev

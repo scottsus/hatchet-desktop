@@ -1,7 +1,7 @@
-import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/tauri';
+import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/tauri";
 
-import { SensorDataV2 } from '../types/sensor-data';
+import { SensorDataV2 } from "../types/sensor-data";
 
 interface ParsedSensorResponse {
   userId: number;
@@ -13,7 +13,7 @@ interface ParsedSensorResponse {
 
 function parseSensorResponse(response: string): ParsedSensorResponse | null {
   const trimmedResponse = response.trim();
-  const parts = trimmedResponse.split(':');
+  const parts = trimmedResponse.split(":");
 
   if (parts.length !== 2) {
     console.error('Invalid data format: expected "userId:values"');
@@ -22,13 +22,13 @@ function parseSensorResponse(response: string): ParsedSensorResponse | null {
 
   const userId = parseInt(parts[0], 10);
   if (isNaN(userId)) {
-    console.error('Invalid user ID format');
+    console.error("Invalid user ID format");
     return null;
   }
 
-  const values = parts[1].split(',');
+  const values = parts[1].split(",");
   if (values.length < 5) {
-    console.error('Insufficient data values: expected at least 5 values');
+    console.error("Insufficient data values: expected at least 5 values");
     return null;
   }
 
@@ -38,7 +38,7 @@ function parseSensorResponse(response: string): ParsedSensorResponse | null {
   const barometricAltitude = parseFloat(values[4]);
 
   if ([latitude, longitude, inertialAltitude, barometricAltitude].some(isNaN)) {
-    console.error('Invalid numeric values in sensor data');
+    console.error("Invalid numeric values in sensor data");
     return null;
   }
 
@@ -55,14 +55,14 @@ export async function listenForSensorUpdates(
   onSensorData: (data: SensorDataV2) => void,
 ): Promise<() => void> {
   try {
-    await invoke('start_data_streaming');
+    await invoke("start_data_streaming");
   } catch (error) {
-    console.error('Failed to start data streaming:', error);
+    console.error("Failed to start data streaming:", error);
   }
 
-  const unlisten = await listen<string>('sensor_data', (event) => {
+  const unlisten = await listen<string>("sensor_data", (event) => {
     const response = event.payload;
-    if (!response || response.includes('error')) {
+    if (!response || response.includes("error")) {
       return;
     }
 
@@ -75,8 +75,8 @@ export async function listenForSensorUpdates(
       id: parsedData.userId,
       Latitude: parsedData.latitude,
       Longitude: parsedData.longitude,
-      'Position Estimation Inertial Z': parsedData.inertialAltitude,
-      'Altitude Estimation Pressometer': parsedData.barometricAltitude,
+      "Position Estimation Inertial Z": parsedData.inertialAltitude,
+      "Altitude Estimation Pressometer": parsedData.barometricAltitude,
     };
 
     onSensorData(sensorData);

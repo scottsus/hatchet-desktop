@@ -1,35 +1,35 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 const calls = [
   {
-    callType: 'F Controlled Burn',
-    address: '4762 Duck Creek Road',
-    time: '5:16pm',
-    date: '5/22',
+    callType: "F Controlled Burn",
+    address: "4762 Duck Creek Road",
+    time: "5:16pm",
+    date: "5/22",
   },
   {
-    callType: 'F Alarm Test',
-    address: '2409 Water Street',
-    time: '2:08pm',
-    date: '5/22',
+    callType: "F Alarm Test",
+    address: "2409 Water Street",
+    time: "2:08pm",
+    date: "5/22",
   },
   {
-    callType: 'F Structure Fire',
-    address: '789 Main Street',
-    time: '11:45am',
-    date: '5/22',
+    callType: "F Structure Fire",
+    address: "789 Main Street",
+    time: "11:45am",
+    date: "5/22",
   },
   {
-    callType: 'F Vehicle Fire',
-    address: '456 Oak Avenue',
-    time: '3:30pm',
-    date: '5/22',
+    callType: "F Vehicle Fire",
+    address: "456 Oak Avenue",
+    time: "3:30pm",
+    date: "5/22",
   },
   {
-    callType: 'F Medical Emergency',
-    address: '123 Elm Road',
-    time: '9:15pm',
-    date: '5/22',
+    callType: "F Medical Emergency",
+    address: "123 Elm Road",
+    time: "9:15pm",
+    date: "5/22",
   },
 ];
 

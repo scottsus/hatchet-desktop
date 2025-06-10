@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { FireFighterCircle } from '@/src/components/ff-circle';
-import { DEMO_INITIAL_CENTER } from '@/src/env';
-import { RouteIcon, SatelliteIcon } from 'lucide-react';
-import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
-import { useEffect, useRef, useState } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { FireFighterCircle } from "@/src/components/ff-circle";
+import { DEMO_INITIAL_CENTER } from "@/src/env";
+import { RouteIcon, SatelliteIcon } from "lucide-react";
+import mapboxgl, { LngLatLike, MapOptions } from "mapbox-gl";
+import { useEffect, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
-import { useFireground } from '../providers/fireground';
+import { useFireground } from "../providers/fireground";
 
 const mapboxConfig = (ref: any) =>
   ({
     container: ref,
-    style: 'mapbox://styles/mapbox/dark-v11',
+    style: "mapbox://styles/mapbox/dark-v11",
     center: DEMO_INITIAL_CENTER,
     zoom: 18,
     attributionControl: false,
@@ -36,17 +36,17 @@ export function Map({}: {}) {
   const markersRef = useRef<Record<string, mapboxgl.Marker | null>>({});
   const coordinatesRef = useRef<Record<string, number[][]>>({});
 
-  const [mapView, setMapView] = useState<'dark-v11' | 'satellite-v9'>(
-    'dark-v11',
+  const [mapView, setMapView] = useState<"dark-v11" | "satellite-v9">(
+    "dark-v11",
   );
   const [trailsVisible, setTrailsVisible] = useState(true);
 
   const toggleMapView = () => {
-    const newStyle = mapView === 'dark-v11' ? 'satellite-v9' : 'dark-v11';
+    const newStyle = mapView === "dark-v11" ? "satellite-v9" : "dark-v11";
     setMapView(newStyle);
     if (mapRef.current) {
       mapRef.current.setStyle(`mapbox://styles/mapbox/${newStyle}`);
-      mapRef.current.on('style.load', () => {
+      mapRef.current.on("style.load", () => {
         // Re-add sources and layers after style change
         mapData.forEach((member) => {
           initializePath({
@@ -77,8 +77,8 @@ export function Map({}: {}) {
       if (layer) {
         mapRef.current?.setLayoutProperty(
           layerId,
-          'visibility',
-          visible ? 'visible' : 'none',
+          "visibility",
+          visible ? "visible" : "none",
         );
       }
     });
@@ -103,37 +103,37 @@ export function Map({}: {}) {
     const source = map.getSource(routeId);
     if (source) {
       (source as mapboxgl.GeoJSONSource).setData({
-        type: 'Feature',
+        type: "Feature",
         properties: {},
         geometry: {
-          type: 'LineString',
+          type: "LineString",
           coordinates,
         },
       });
     } else {
       map.addSource(routeId, {
-        type: 'geojson',
+        type: "geojson",
         data: {
-          type: 'Feature',
+          type: "Feature",
           properties: {},
           geometry: {
-            type: 'LineString',
+            type: "LineString",
             coordinates,
           },
         },
       });
       map.addLayer({
         id: layerId,
-        type: 'line',
+        type: "line",
         source: routeId,
         layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
+          "line-join": "round",
+          "line-cap": "round",
         },
         paint: {
-          'line-color': color,
-          'line-width': 2,
-          'line-dasharray': [3, 2], // [dash length, gap length]
+          "line-color": color,
+          "line-width": 2,
+          "line-dasharray": [3, 2], // [dash length, gap length]
         },
       });
     }
@@ -161,10 +161,10 @@ export function Map({}: {}) {
     const source = map.getSource(sourceId);
     if (source) {
       (source as mapboxgl.GeoJSONSource).setData({
-        type: 'Feature',
+        type: "Feature",
         properties: {},
         geometry: {
-          type: 'LineString',
+          type: "LineString",
           coordinates: coordinatesRef.current[id],
         },
       });
@@ -180,7 +180,7 @@ export function Map({}: {}) {
       <FireFighterCircle color={color} initials={initials} />
     );
     const staticElement = renderToStaticMarkup(markerElement1);
-    const markerElement = document.createElement('div');
+    const markerElement = document.createElement("div");
     markerElement.innerHTML = staticElement;
 
     const mapboxMarker = new mapboxgl.Marker(markerElement)
@@ -193,10 +193,10 @@ export function Map({}: {}) {
   useEffect(() => {
     if (mapRef.current) return;
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
     mapRef.current = new mapboxgl.Map(mapboxConfig(mapContainer.current));
 
-    mapRef.current.on('load', () => {
+    mapRef.current.on("load", () => {
       mapData.forEach((member) => {
         initializePath({
           routeId: member.route,
@@ -251,7 +251,7 @@ export function Map({}: {}) {
       if (layer) {
         mapRef.current?.setPaintProperty(
           member.layer,
-          'line-color',
+          "line-color",
           member.color,
         );
       }

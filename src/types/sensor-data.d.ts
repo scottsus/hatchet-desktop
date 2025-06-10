@@ -1,4 +1,4 @@
-import { CrewMember } from './crew';
+import { CrewMember } from "./crew";
 
 export type SensorDataWithCrew = {
   sensorData: SensorDataV2;
@@ -9,8 +9,8 @@ export type SensorDataV2 = {
   id: number;
   Latitude: number;
   Longitude: number;
-  'Position Estimation Inertial Z': number;
-  'Altitude Estimation Pressometer': number;
+  "Position Estimation Inertial Z": number;
+  "Altitude Estimation Pressometer": number;
 };
 
 // Legacy sensor data format - keep for documentation purposes
@@ -26,21 +26,21 @@ export type SensorDataV1 = {
   Second: number;
   Latitude: number;
   Longitude: number;
-  'Operator Id': number;
-  'Message Counter': number;
-  'Step Counter': number;
+  "Operator Id": number;
+  "Message Counter": number;
+  "Step Counter": number;
   Flags: number;
-  'Position Estimation Inertial Magnetic X': number;
-  'Position Estimation Inertial Magnetic Y': number;
-  'Position Estimation Inertial X': number;
-  'Position Estimation Inertial Y': number;
-  'Position Estimation Inertial Z': number;
-  'Altitude Estimation Pressometer': number;
-  'Latitude Estimation GPS': number;
-  'Longitude Estimation GPS': number;
-  'GPS Estimation Quality': number;
-  'North Alignment Angle Inertial Path': number;
-  'Yaw Drift Inertial Path': number;
-  'CRC-CCITT': number;
+  "Position Estimation Inertial Magnetic X": number;
+  "Position Estimation Inertial Magnetic Y": number;
+  "Position Estimation Inertial X": number;
+  "Position Estimation Inertial Y": number;
+  "Position Estimation Inertial Z": number;
+  "Altitude Estimation Pressometer": number;
+  "Latitude Estimation GPS": number;
+  "Longitude Estimation GPS": number;
+  "GPS Estimation Quality": number;
+  "North Alignment Angle Inertial Path": number;
+  "Yaw Drift Inertial Path": number;
+  "CRC-CCITT": number;
   thesia_string: string;
 };

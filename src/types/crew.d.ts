@@ -1,4 +1,4 @@
-import { SensorDataV2 } from './sensor-data';
+import { SensorDataV2 } from "./sensor-data";
 
 export interface CrewMember {
   id: number;
@@ -6,7 +6,7 @@ export interface CrewMember {
   initials: string;
   color: string;
   time: string;
-  signalStrength: 'low' | 'med' | 'high';
+  signalStrength: "low" | "med" | "high";
   temperature: number; // deprecated soon
   thesia_count: number;
   initialLat?: number;

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ChevronDown, MapPinnedIcon, TargetIcon } from 'lucide-react';
+import { ChevronDown, MapPinnedIcon, TargetIcon } from "lucide-react";
 
 export function Info() {
   return (
@@ -14,10 +14,10 @@ export function Info() {
         <button className="flex aspect-square h-full w-1/3 cursor-pointer items-center justify-center rounded-md border border-primary bg-primary/20 p-2 text-primary transition-all hover:border-white hover:text-white">
           <MapPinnedIcon />
         </button>
-        <button className="text-bg-gray-5 flex aspect-square h-full w-1/3 cursor-pointer items-center justify-center rounded-md bg-bg-gray-2 p-2 transition-all hover:border-white hover:text-white">
+        <button className="flex aspect-square h-full w-1/3 cursor-pointer items-center justify-center rounded-md bg-bg-gray-2 p-2 text-bg-gray-5 transition-all hover:border-white hover:text-white">
           <TargetIcon />
         </button>
-        <button className="text-bg-gray-5 flex aspect-square h-full w-1/3 cursor-pointer items-center justify-center rounded-md bg-bg-gray-2 p-2 transition-all hover:border-white hover:text-white">
+        <button className="flex aspect-square h-full w-1/3 cursor-pointer items-center justify-center rounded-md bg-bg-gray-2 p-2 text-bg-gray-5 transition-all hover:border-white hover:text-white">
           <TargetIcon />
         </button>
       </div>
