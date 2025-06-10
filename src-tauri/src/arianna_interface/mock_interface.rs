@@ -12,8 +12,20 @@ pub struct MockAriannaInterface {
 }
 
 impl MockAriannaInterface {
-    pub fn new(replay_data_path: &str) -> Self {
-        let replay_data = Self::load_replay_data(replay_data_path).unwrap_or_default();
+    pub fn new(_replay_data_path: &str) -> Self {
+        let mut replay_data = Vec::new();
+        
+        let paths = [
+            "../tests/Mock_Server_Output_Mode1_Home.txt",
+            "../tests/Mock_Server_Output_User69.txt",
+        ];
+        
+        for path in &paths {
+            if let Ok(data) = Self::load_replay_data(path) {
+                replay_data.extend(data);
+            }
+        }
+        
         Self {
             replay_data,
             current_index: Mutex::new(0),
@@ -49,13 +61,9 @@ impl MockAriannaInterface {
     }
     
     fn advance_data_index(&self) {
-        let user_data: Vec<&String> = self.replay_data.iter()
-            .filter(|line| line.starts_with("89:"))
-            .collect();
-        
-        if !user_data.is_empty() {
+        if !self.replay_data.is_empty() {
             let mut current_index = self.current_index.lock().unwrap();
-            *current_index = (*current_index + 1) % user_data.len();
+            *current_index = (*current_index + 1) % self.replay_data.len();
         }
     }
 }

@@ -19,7 +19,7 @@ const mapboxConfig = (ref: any) =>
   }) as MapOptions;
 
 export function Map({}: {}) {
-  const { teams, mapCenter, getLatestSensorDataWithCrew } = useFireground();
+  const { teams, mapCenter, getAllSensorUpdates } = useFireground();
 
   const mapData = teams
     .flatMap((team) => team.crew)
@@ -211,22 +211,41 @@ export function Map({}: {}) {
 
   // when new data comes in
   useEffect(() => {
-    const sensorDataWithCrew = getLatestSensorDataWithCrew();
-    if (!sensorDataWithCrew) {
-      return;
-    }
-    const { sensorData, crewMember } = sensorDataWithCrew;
-    const coordinates: LngLatLike = [sensorData.Longitude, sensorData.Latitude];
+    const allUpdates = getAllSensorUpdates();
 
-    console.log('coordinates ON MAP:', coordinates);
+    // Process each firefighter's sensor data
+    allUpdates.forEach((sensorDataWithCrew, firefighterId) => {
+      const { sensorData, crewMember } = sensorDataWithCrew;
+      const coordinates: LngLatLike = [
+        sensorData.Longitude,
+        sensorData.Latitude,
+      ];
 
-    // 👣 render path
-    if (!coordinatesRef.current[crewMember.id]) {
-      coordinatesRef.current[crewMember.id] = [];
-    }
-    coordinatesRef.current[crewMember.id].push(coordinates as number[]);
+      // 👣 render path
+      if (!coordinatesRef.current[crewMember.id]) {
+        coordinatesRef.current[crewMember.id] = [];
+      }
+      coordinatesRef.current[crewMember.id].push(coordinates as number[]);
 
-    // 🎨 repaint paths
+      // Update the path on the map
+      initializePath({
+        routeId: `route_${crewMember.id}`,
+        layerId: `layer_${crewMember.id}`,
+        coordinates: coordinatesRef.current[crewMember.id],
+        color: crewMember.color,
+      });
+
+      // 📍 render marker
+      updateMarker({
+        id: crewMember.id,
+        initials: crewMember.initials,
+        color: crewMember.color,
+        lngLat: coordinates,
+        markers: markersRef.current,
+      });
+    });
+
+    // 🎨 repaint paths for all members
     mapData.forEach((member) => {
       const layer = mapRef.current?.getLayer(member.layer);
       if (layer) {
@@ -237,16 +256,7 @@ export function Map({}: {}) {
         );
       }
     });
-
-    // 📍 render marker
-    updateMarker({
-      id: crewMember.id,
-      initials: crewMember.initials,
-      color: crewMember.color,
-      lngLat: coordinates,
-      markers: markersRef.current,
-    });
-  }, [teams]);
+  }, [teams, getAllSensorUpdates]);
 
   // when upstream handlers are called
   useEffect(() => {

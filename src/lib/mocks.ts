@@ -1,5 +1,8 @@
 import { Team } from '../types/crew';
 
+/**
+ * Legacy - keep for documentation purposes
+ */
 export const mockedCallDetails = {
   callType: 'Smoke Investigation',
   location: '2180 Post St',

@@ -167,7 +167,6 @@ function CrewMember({
 
   const onClickReCenter = () => {
     const sensorData = getLatestSensorData(crewMember.id);
-    console.log([sensorData?.Longitude, sensorData?.Latitude]);
     if (sensorData) {
       reCenter([sensorData.Longitude, sensorData.Latitude]);
     }

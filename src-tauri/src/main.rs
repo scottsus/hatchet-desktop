@@ -1,4 +1,4 @@
-use tauri::{command, State};
+use tauri::{command, State, Manager};
 use std::sync::{Arc, Mutex};
 
 mod config;
@@ -6,23 +6,35 @@ mod sensor_listener;
 mod arianna_interface;
 mod sensor_service;
 
-use config::SensorServiceConfig;
+use config::{SensorServiceConfig, KNOWN_USER_IDS};
 use sensor_service::SensorService;
 
 struct AppState {
     sensor_service: Arc<Mutex<SensorService>>,
+    app_handle: tauri::AppHandle,
 }
 
 #[command]
-fn is_user_initialized(user_id: u8, state: State<AppState>) -> bool {
-    let service = state.sensor_service.lock().unwrap();
-    service.is_user_initialized(user_id)
-}
-
-#[command]
-fn fetch_last_position(user_id: u8, state: State<AppState>) -> Result<String, String> {
-    let service = state.sensor_service.lock().unwrap();
-    service.get_last_position(user_id)
+fn start_data_streaming(state: State<AppState>) -> Result<(), String> {
+    let service = state.sensor_service.clone();
+    let app_handle = state.app_handle.clone();
+    
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
+        
+        loop {
+            interval.tick().await;
+            
+            for &user_id in KNOWN_USER_IDS {
+                let service = service.lock().unwrap();
+                if let Ok(data) = service.get_last_position(user_id) {
+                    let _ = app_handle.emit_all("sensor_data", data);
+                }
+            }
+        }
+    });
+    
+    Ok(())
 }
 
 fn main() {
@@ -38,17 +50,18 @@ fn main() {
     }
     
     tauri::Builder::default()
-        .manage(AppState {
-            sensor_service: Arc::new(Mutex::new(sensor_service)),
-        })
-        .invoke_handler(tauri::generate_handler![
-            is_user_initialized,
-            fetch_last_position
-        ])
-        .setup(|_app| {
+        .setup(|app| {
+            let app_handle = app.handle();
+            app.manage(AppState {
+                sensor_service: Arc::new(Mutex::new(sensor_service)),
+                app_handle: app_handle.clone(),
+            });
             println!("🪓 Hatchet started");
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![
+            start_data_streaming
+        ])
         .on_window_event(|event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event.event() {
                 println!("🪓 Hatchet stopped");

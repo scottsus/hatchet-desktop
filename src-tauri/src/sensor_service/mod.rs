@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::collections::HashSet;
-use crate::config::{SensorServiceConfig, DEFAULT_TEST_USER_ID};
+use crate::config::{SensorServiceConfig, KNOWN_USER_IDS};
 use crate::sensor_listener::{SensorListener, TcpSensorListener, MockSensorListener};
 use crate::arianna_interface::{AriannaInterface, TcpAriannaInterface, MockAriannaInterface};
 
@@ -20,7 +20,7 @@ impl SensorService {
         };
         
         let arianna: Box<dyn AriannaInterface> = if config.use_mock_arianna {
-            Box::new(MockAriannaInterface::new(&config.replay_data_path))
+            Box::new(MockAriannaInterface::new(""))
         } else {
             Box::new(TcpAriannaInterface::new(&config.arianna_host, config.arianna_port))
         };
@@ -56,7 +56,7 @@ impl SensorService {
     }
     
     pub fn is_user_initialized(&self, user_id: u8) -> bool {
-        if self.config.use_mock_arianna && user_id == DEFAULT_TEST_USER_ID {
+        if self.config.use_mock_arianna && KNOWN_USER_IDS.contains(&user_id) {
             return true;
         }
         let ops = self.initialized_operators.lock().unwrap();

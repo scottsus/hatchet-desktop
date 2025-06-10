@@ -1,4 +1,4 @@
-import { SensorData } from './sensor-data';
+import { SensorDataV2 } from './sensor-data';
 
 export interface CrewMember {
   id: number;
@@ -13,7 +13,7 @@ export interface CrewMember {
   initialLon?: number;
   relative_elevation: number; // deprecated soon
   sensorSrc: string;
-  sensorData: SensorData[];
+  sensorData: SensorDataV2[];
   calibrationOpts?: CalibrationOpts;
 }
 

@@ -1,18 +1,19 @@
 import { CrewMember } from './crew';
 
-export type SensorDataWithId = SensorDataV2 & { id: number };
 export type SensorDataWithCrew = {
   sensorData: SensorDataV2;
   crewMember: CrewMember;
 };
 
 export type SensorDataV2 = {
+  id: number;
   Latitude: number;
   Longitude: number;
   'Position Estimation Inertial Z': number;
   'Altitude Estimation Pressometer': number;
 };
 
+// Legacy sensor data format - keep for documentation purposes
 export type SensorDataV1 = {
   Temperature: number;
   Pressure: number;

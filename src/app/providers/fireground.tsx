@@ -1,6 +1,6 @@
-import { DEMO_INITIAL_CENTER, INTERVAL } from '@/src/env';
-import { fetchSensorData } from '@/src/lib/fetch-data';
-import { mockedCallDetails, mockedTeams } from '@/src/lib/mocks';
+import { DEMO_INITIAL_CENTER } from '@/src/env';
+import { listenForSensorUpdates } from '@/src/lib/fetch-data';
+import { mockedCallDetails } from '@/src/lib/mocks';
 import { CrewMember, Team } from '@/src/types/crew';
 import { SensorDataV2, SensorDataWithCrew } from '@/src/types/sensor-data';
 import { LngLatLike } from 'mapbox-gl';
@@ -18,8 +18,8 @@ import { CallDetails } from '../dashboard/call';
 type FiregroundContextType = {
   callDetails: CallDetails;
   teams: Team[];
-  getLatestSensorDataWithCrew: () => SensorDataWithCrew | null;
   getLatestSensorData: (memberId: number) => SensorDataV2 | undefined;
+  getAllSensorUpdates: () => Map<number, SensorDataWithCrew>;
   mapCenter: LngLatLike;
   reCenter: (center: LngLatLike) => void;
 };
@@ -34,9 +34,10 @@ export function FiregroundProvider({
   children: React.ReactNode;
 }) {
   // State initialization
-  const [teams, setTeams] = useState<Team[]>(mockedTeams);
-  const [latestSensorData, setLatestSensorData] =
-    useState<SensorDataWithCrew | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [allSensorUpdates, setAllSensorUpdates] = useState<
+    Map<number, SensorDataWithCrew>
+  >(new Map());
   const [mapCenter, setMapCenter] = useState<LngLatLike>(
     DEMO_INITIAL_CENTER as LngLatLike,
   );
@@ -46,7 +47,9 @@ export function FiregroundProvider({
     (memberId: number): CrewMember | undefined => {
       for (const team of teams) {
         const member = team.crew.find((m) => m.id === memberId);
-        if (member) return member;
+        if (member) {
+          return member;
+        }
       }
       return undefined;
     },
@@ -79,19 +82,22 @@ export function FiregroundProvider({
         return newTeams;
       });
 
-      setLatestSensorData({
-        crewMember: member,
-        sensorData: newData,
+      setAllSensorUpdates((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(member.id, {
+          sensorData: newData,
+          crewMember: member,
+        });
+        return newMap;
       });
     },
     [],
   );
 
   // Helper functions for accessing data
-  const getLatestSensorDataWithCrew = useCallback(
-    () => latestSensorData,
-    [latestSensorData],
-  );
+  const getAllSensorUpdates = useCallback(() => {
+    return allSensorUpdates;
+  }, [allSensorUpdates]);
 
   const getLatestSensorData = useCallback(
     (memberId: number) => {
@@ -108,28 +114,67 @@ export function FiregroundProvider({
     [],
   );
 
-  // Poll for sensor data
+  // Listen for sensor data events
   useEffect(() => {
-    const pollSensorData = async () => {
+    let unlisten: (() => void) | null = null;
+
+    const setupSensorListener = async () => {
       try {
-        const data = await fetchSensorData();
-        if (!data) return;
+        unlisten = await listenForSensorUpdates((sensorData) => {
+          const memberId = sensorData.id;
+          let member = findCrewMember(memberId);
 
-        const { id, ...sensorData } = data;
-        const memberId = typeof id === 'number' ? id : parseInt(id);
-        const member = findCrewMember(memberId);
+          // If member doesn't exist, create a dynamic one
+          if (!member) {
+            const newMember = {
+              id: memberId,
+              name: `Firefighter ${memberId}`,
+              initials: `FF${memberId}`,
+              color: memberId === 89 ? '#9259A0' : '#AE8C5A',
+              time: '0:0:0',
+              signalStrength: 'high' as const,
+              temperature: 0,
+              thesia_count: 0,
+              relative_elevation: 1,
+              sensorSrc: `user_${memberId}.csv`,
+              sensorData: [],
+            };
 
-        if (member) {
+            setTeams((prev) => {
+              const memberExists = prev.some((team) =>
+                team.crew.some((crewMember) => crewMember.id === memberId),
+              );
+              if (memberExists) {
+                return prev;
+              }
+
+              const newTeams = [...prev];
+              if (newTeams.length > 0) {
+                newTeams[0] = {
+                  ...newTeams[0],
+                  crew: [...newTeams[0].crew, newMember],
+                };
+              }
+              return newTeams;
+            });
+
+            member = newMember;
+          }
+
           updateSensorData(member, sensorData);
-        }
+        });
       } catch (error) {
-        console.error('Failed to fetch sensor data:', error);
+        console.error('Failed to setup sensor listener:', error);
       }
     };
 
-    pollSensorData();
-    const interval = setInterval(pollSensorData, INTERVAL || 1000);
-    return () => clearInterval(interval);
+    setupSensorListener();
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
   }, [findCrewMember, updateSensorData]);
 
   // Provide context
@@ -138,8 +183,8 @@ export function FiregroundProvider({
       value={{
         callDetails: mockedCallDetails,
         teams,
-        getLatestSensorDataWithCrew,
         getLatestSensorData,
+        getAllSensorUpdates,
         mapCenter,
         reCenter,
       }}

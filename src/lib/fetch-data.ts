@@ -1,7 +1,7 @@
+import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/tauri';
 
-import { DEFAULT_USER_ID } from '../env';
-import { SensorDataWithId } from '../types/sensor-data';
+import { SensorDataV2 } from '../types/sensor-data';
 
 interface ParsedSensorResponse {
   userId: number;
@@ -51,32 +51,27 @@ function parseSensorResponse(response: string): ParsedSensorResponse | null {
   };
 }
 
-export async function fetchSensorData(): Promise<SensorDataWithId | null> {
+export async function listenForSensorUpdates(
+  onSensorData: (data: SensorDataV2) => void,
+): Promise<() => void> {
   try {
-    const userId = DEFAULT_USER_ID;
+    await invoke('start_data_streaming');
+  } catch (error) {
+    console.error('Failed to start data streaming:', error);
+  }
 
-    const isInitialized = await invoke<boolean>('is_user_initialized', {
-      userId,
-    });
-    if (!isInitialized) {
-      console.log(
-        `User ${userId} not initialized in server. Skipping data fetch.`,
-      );
-      return null;
-    }
-
-    const response = await invoke<string>('fetch_last_position', { userId });
+  const unlisten = await listen<string>('sensor_data', (event) => {
+    const response = event.payload;
     if (!response || response.includes('error')) {
-      console.log('Skipping function due to error response');
-      return null;
+      return;
     }
 
     const parsedData = parseSensorResponse(response);
     if (!parsedData) {
-      return null;
+      return;
     }
 
-    const sensorDataWithId: SensorDataWithId = {
+    const sensorData: SensorDataV2 = {
       id: parsedData.userId,
       Latitude: parsedData.latitude,
       Longitude: parsedData.longitude,
@@ -84,9 +79,8 @@ export async function fetchSensorData(): Promise<SensorDataWithId | null> {
       'Altitude Estimation Pressometer': parsedData.barometricAltitude,
     };
 
-    return sensorDataWithId;
-  } catch (error) {
-    console.error('Failed to fetch sensor data:', error);
-    return null;
-  }
+    onSensorData(sensorData);
+  });
+
+  return unlisten;
 }
