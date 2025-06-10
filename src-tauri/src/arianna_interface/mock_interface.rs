@@ -16,8 +16,8 @@ impl MockAriannaInterface {
         let mut replay_data = Vec::new();
         
         let paths = [
-            "../tests/Mock_Server_Output_Mode1_Home.txt",
-            "../tests/Mock_Server_Output_User69.txt",
+            "../mocks/arianna-interface/user_69.txt",
+            "../mocks/arianna-interface/user_89.txt",
         ];
         
         for path in &paths {
