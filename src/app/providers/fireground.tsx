@@ -1,12 +1,8 @@
-import {
-  DEMO_INITIAL_CENTER,
-  INTERVAL,
-  USE_ACTUAL_TCP_SERVER,
-} from '@/src/env';
+import { DEMO_INITIAL_CENTER, INTERVAL } from '@/src/env';
 import { fetchSensorData } from '@/src/lib/fetch-data';
 import { mockedCallDetails, mockedTeams } from '@/src/lib/mocks';
 import { CrewMember, Team } from '@/src/types/crew';
-import { SensorData, SensorDataWithCrew } from '@/src/types/sensor-data';
+import { SensorDataV2, SensorDataWithCrew } from '@/src/types/sensor-data';
 import { LngLatLike } from 'mapbox-gl';
 import {
   createContext,
@@ -23,7 +19,7 @@ type FiregroundContextType = {
   callDetails: CallDetails;
   teams: Team[];
   getLatestSensorDataWithCrew: () => SensorDataWithCrew | null;
-  getLatestSensorData: (memberId: number) => SensorData | undefined;
+  getLatestSensorData: (memberId: number) => SensorDataV2 | undefined;
   mapCenter: LngLatLike;
   reCenter: (center: LngLatLike) => void;
 };
@@ -59,7 +55,7 @@ export function FiregroundProvider({
 
   // Update sensor data for a crew member
   const updateSensorData = useCallback(
-    (member: CrewMember, newData: SensorData) => {
+    (member: CrewMember, newData: SensorDataV2) => {
       setTeams((prev) => {
         const teamIndex = prev.findIndex((team) =>
           team.crew.some((m) => m.id === member.id),
@@ -114,8 +110,6 @@ export function FiregroundProvider({
 
   // Poll for sensor data
   useEffect(() => {
-    if (!USE_ACTUAL_TCP_SERVER) return;
-
     const pollSensorData = async () => {
       try {
         const data = await fetchSensorData();

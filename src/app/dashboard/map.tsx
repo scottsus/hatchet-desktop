@@ -1,8 +1,7 @@
 'use client';
 
 import { FireFighterCircle } from '@/src/components/ff-circle';
-import { DEMO_INITIAL_CENTER, USE_ACTUAL_TCP_SERVER } from '@/src/env';
-import { calcCoordinates } from '@/src/lib/calc-coordinates';
+import { DEMO_INITIAL_CENTER } from '@/src/env';
 import { RouteIcon, SatelliteIcon } from 'lucide-react';
 import mapboxgl, { LngLatLike, MapOptions } from 'mapbox-gl';
 import { useEffect, useRef, useState } from 'react';
@@ -217,14 +216,7 @@ export function Map({}: {}) {
       return;
     }
     const { sensorData, crewMember } = sensorDataWithCrew;
-    let coordinates: LngLatLike = [0, 0]; // Initialize with default values to match LngLatLike
-    if(USE_ACTUAL_TCP_SERVER){
-      coordinates = [sensorData.Longitude, sensorData.Latitude];
-    }
-    else
-    {
-      return; // Skip if not using actual TCP server
-    }
+    const coordinates: LngLatLike = [sensorData.Longitude, sensorData.Latitude];
 
     console.log('coordinates ON MAP:', coordinates);
 
