@@ -17,7 +17,6 @@ void signalHandler(int signum) {
         g_server->stop();
     }
     
-    // AriannaProcessor will be cleaned up automatically when g_processor is destroyed
     g_processor.reset();
     
     exit(signum);
@@ -27,30 +26,17 @@ int main() {
     signal(SIGINT, signalHandler);
     
     // ⚙️ settings
-    std::string csv_file = "./data/03-13/level.csv";
-    std::string output_file = "./data/03-13/arianna_coordinates.txt";
-    int port = 8080;
+    int port = 5051;
 
-    std::cout << "🔥 Hatchet Server" << std::endl;
-
-    arianna::DataLoader loader(csv_file);
-    std::vector<std::string> hex_data = loader.loadData();
+    std::cout << "🔥 Hatchet Server (with libarianna.so)" << std::endl;
 
     try {
-        // Create the AriannaProcessor with RAII
+        // Create the AriannaProcessor with RAII for dynamic processing
         g_processor = std::make_unique<arianna::AriannaProcessor>();
         
-        // Process the data
-        arianna::ProcessorResult result = g_processor->process(hex_data);
-        if (result.status != 0) {
-            std::cerr << "error processing csv data: " << result.error_message << std::endl;
-            return 1;
-        }
-
+        // Create an empty buffer - data will be added dynamically via TCP commands
         arianna::Buffer buffer;
         g_buffer = &buffer;
-        size_t coordinates_added = buffer.addCoordinates(result.coordinates, hex_data);
-        size_t _ = buffer.writeToFile(output_file);
 
         Server server(buffer, port);
         g_server = &server;
@@ -59,13 +45,14 @@ int main() {
             return 1;
         }
 
+        std::cout << "Server listening on port " << port << std::endl;
+        std::cout << "Ready to receive TCP commands (Init, Set, Get, Last, etc.)" << std::endl;
         std::cout << "CTRL+C to stop the server" << std::endl;
 
         while (server.isRunning()) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
-        // AriannaProcessor will be cleaned up automatically when g_processor is destroyed
         g_processor.reset();
 
         return 0;

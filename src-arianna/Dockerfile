@@ -9,4 +9,8 @@ WORKDIR /app
 
 COPY . .
 
-CMD ["/bin/bash"]
+RUN make all
+
+ENV LD_LIBRARY_PATH=/app/lib:$LD_LIBRARY_PATH
+
+CMD ["./build/main"]

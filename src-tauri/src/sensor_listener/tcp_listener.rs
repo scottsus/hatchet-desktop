@@ -43,7 +43,7 @@ impl SensorListener for TcpSensorListener {
             while is_running.load(Ordering::SeqCst) {
                 match listener.accept() {
                     Ok((mut stream, addr)) => {
-                        println!("New sensor connection from: {}", addr);
+                        println!("Sensor connected: {}", addr);
                         
                         let callback_clone = callback.clone();
                         let is_running_clone = is_running.clone();

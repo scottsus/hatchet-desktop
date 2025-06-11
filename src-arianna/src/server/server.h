@@ -17,7 +17,7 @@ public:
      * @param buffer Reference to a Buffer object
      * @param port Port number to listen on
      */
-    Server(arianna::Buffer& buffer, int port = 8080);
+    Server(arianna::Buffer& buffer, int port = 5051);
     
     /**
      * Destructor
@@ -61,6 +61,14 @@ private:
      * @param client_fd Client socket file descriptor
      */
     void handleClient(int client_fd);
+    
+    /**
+     * Process a command received from a client
+     *
+     * @param command The command string to process
+     * @return Response string to send back to client
+     */
+    std::string processCommand(const std::string& command);
 };
 
 #endif // SERVER_H

@@ -1,6 +1,6 @@
 CC := g++
 CFLAGS := -w -fPIC -pthread
-LDFLAGS := -ldl -pthread
+LDFLAGS := -ldl -pthread -L./lib -larianna
 
 SRC_DIR := src
 DIST_DIR := build

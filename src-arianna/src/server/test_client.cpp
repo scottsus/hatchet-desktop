@@ -9,7 +9,7 @@
 
 // Server connection settings
 const std::string SERVER_IP = "127.0.0.1";
-const int SERVER_PORT = 8080;
+const int SERVER_PORT = 5051;
 const int BUFFER_SIZE = 1024;
 const int RETRY_DELAY_MS = 500;
 

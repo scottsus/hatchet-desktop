@@ -2,12 +2,13 @@ use std::sync::{Arc, Mutex};
 use std::collections::HashSet;
 use crate::config::{SensorServiceConfig, KNOWN_USER_IDS};
 use crate::sensor_listener::{SensorListener, TcpSensorListener, MockSensorListener};
-use crate::arianna_interface::{AriannaInterface, TcpAriannaInterface, MockAriannaInterface};
+use crate::arianna_interface::{AriannaInterface, TcpAriannaInterface, MockAriannaInterface, SetParametersRequest};
 
 pub struct SensorService {
     listener: Arc<Mutex<Box<dyn SensorListener>>>,
     arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
     initialized_operators: Arc<Mutex<HashSet<u8>>>,
+    active_users: Arc<Mutex<HashSet<u8>>>,
     config: SensorServiceConfig,
 }
 
@@ -29,6 +30,7 @@ impl SensorService {
             listener: Arc::new(Mutex::new(listener)),
             arianna: Arc::new(Mutex::new(arianna)),
             initialized_operators: Arc::new(Mutex::new(HashSet::new())),
+            active_users: Arc::new(Mutex::new(HashSet::new())),
             config,
         }
     }
@@ -38,14 +40,16 @@ impl SensorService {
         arianna.connect()?;
         
         let mut listener = self.listener.lock().unwrap();
-        listener.start_listening(self.config.listener_ip.clone(), self.config.listener_port)?;
         
         let arianna_clone = self.arianna.clone();
         let initialized_ops_clone = self.initialized_operators.clone();
+        let active_users_clone = self.active_users.clone();
         
         listener.set_data_callback(Arc::new(move |data| {
-            Self::handle_sensor_data(data, arianna_clone.clone(), initialized_ops_clone.clone());
+            Self::handle_sensor_data(data, arianna_clone.clone(), initialized_ops_clone.clone(), active_users_clone.clone());
         }));
+        
+        listener.start_listening(self.config.listener_ip.clone(), self.config.listener_port)?;
         
         Ok(())
     }
@@ -73,26 +77,121 @@ impl SensorService {
         arianna.get(user_id)
     }
     
+    pub fn set_global_parameters(
+        &self,
+        offset_x: f64,
+        offset_y: f64,
+        north_orientation: f64,
+        start_latitude: f64,
+        start_longitude: f64,
+    ) -> Result<String, String> {
+        let mut arianna = self.arianna.lock().unwrap();
+        let mut results = Vec::new();
+        
+        // Apply parameters to all known user IDs
+        for &user_id in KNOWN_USER_IDS {
+            let params = SetParametersRequest {
+                user_id,
+                offset_x,
+                offset_y,
+                north_orientation,
+                track_compensation: 0.0,
+                internal_param: 0.0,
+                track_type: 4, // User corrected track
+                start_latitude,
+                start_longitude,
+            };
+            
+            match arianna.set_parameters(params) {
+                Ok(response) => {
+                    results.push(format!("User {}: {}", user_id, response));
+                }
+                Err(e) => {
+                    results.push(format!("User {} failed: {}", user_id, e));
+                }
+            }
+        }
+        
+        Ok(format!("Global parameters updated:\n{}", results.join("\n")))
+    }
+    
     fn handle_sensor_data(
         data: String,
         arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
         initialized_operators: Arc<Mutex<HashSet<u8>>>,
+        active_users: Arc<Mutex<HashSet<u8>>>,
     ) {
+        // Extract user ID from >Protect lines and add to active users
+        if data.starts_with(">Protect ") {
+            if let Some(user_id_str) = data.get(9..12) {
+                // Parse as decimal but handle leading zeros (089 -> 89)
+                if let Ok(user_id) = user_id_str.parse::<u8>() {
+                    let mut users = active_users.lock().unwrap();
+                    let is_new_user = users.insert(user_id);
+                    drop(users);
+                    
+                    if is_new_user {
+                        println!("New user detected: {}", user_id);
+                        Self::initialize_user(user_id, arianna.clone(), initialized_operators.clone());
+                    }
+                } else {
+                    println!("Failed to parse user ID from: '{}'", user_id_str);
+                }
+            }
+        }
+        
+        // Handle hex data format - use the hex prefix to determine user ID
         if data.starts_with('#') {
             if let Some(hex_op_id) = data.get(1..3) {
                 if let Ok(operator_id) = u8::from_str_radix(hex_op_id, 16) {
-                    let mut ops = initialized_operators.lock().unwrap();
-                    if !ops.contains(&operator_id) {
-                        let mut arianna = arianna.lock().unwrap();
-                        if let Ok(_) = arianna.init(operator_id) {
-                            ops.insert(operator_id);
-                        }
+                    // Check if this user is in our active users set
+                    let users = active_users.lock().unwrap();
+                    if users.contains(&operator_id) {
+                        drop(users);
+                        Self::process_user_data(operator_id, data, arianna, initialized_operators);
+                    } else {
+                        println!("Received hex data for inactive user: {}", operator_id);
                     }
-                    drop(ops);
-                    
-                    let mut arianna = arianna.lock().unwrap();
-                    let _ = arianna.set(operator_id, data);
                 }
+            }
+        }
+    }
+    
+    fn process_user_data(
+        operator_id: u8,
+        data: String,
+        arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
+        initialized_operators: Arc<Mutex<HashSet<u8>>>,
+    ) {
+        // Check if user is initialized before processing data
+        let ops = initialized_operators.lock().unwrap();
+        if !ops.contains(&operator_id) {
+            drop(ops);
+            println!("Received hex data for uninitialized user: {}", operator_id);
+            return;
+        }
+        drop(ops);
+        
+        let mut arianna = arianna.lock().unwrap();
+        match arianna.set(operator_id, data.clone()) {
+            Ok(response) => println!("Hex data: {}", response),
+            Err(e) => println!("Failed to set data for user {}: {}", operator_id, e),
+        }
+    }
+    
+    fn initialize_user(
+        user_id: u8,
+        arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
+        initialized_operators: Arc<Mutex<HashSet<u8>>>,
+    ) {
+        if let Ok(mut arianna_guard) = arianna.lock() {
+            match arianna_guard.init(user_id) {
+                Ok(_) => {
+                    // Mark user as initialized
+                    let mut initialized = initialized_operators.lock().unwrap();
+                    initialized.insert(user_id);
+                },
+                Err(e) => println!("Failed to initialize user {}: {}", user_id, e),
             }
         }
     }
