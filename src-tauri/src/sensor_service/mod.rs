@@ -187,10 +187,31 @@ impl SensorService {
         if let Ok(mut arianna_guard) = arianna.lock() {
             match arianna_guard.init(user_id) {
                 Ok(_) => {
-                    // Mark user as initialized
-                    let mut initialized = initialized_operators.lock().unwrap();
-                    initialized.insert(user_id);
-                },
+                    // After a successful Init, send default SetParameters
+                    let params = SetParametersRequest {
+                        user_id,
+                        offset_x: 0.0,
+                        offset_y: 0.0,
+                        north_orientation: 0.0,
+                        track_compensation: 0.0,
+                        internal_param: 0.0,
+                        track_type: 4,      // user-corrected track
+                        start_latitude: 0.0,
+                        start_longitude: 0.0,
+                    };
+
+                    match arianna_guard.set_parameters(params) {
+                        Ok(_) => {
+                            // Only mark user as initialized if both calls succeed
+                            let mut initialized = initialized_operators.lock().unwrap();
+                            initialized.insert(user_id);
+                        }
+                        Err(e) => println!(
+                            "Failed to set parameters for user {}: {}",
+                            user_id, e
+                        ),
+                    }
+                }
                 Err(e) => println!("Failed to initialize user {}: {}", user_id, e),
             }
         }

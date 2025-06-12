@@ -154,6 +154,50 @@ std::string Server::processCommand(const std::string& command) {
         std::cout << "Init " << user_id << std::endl;
         return "OK Init " + std::to_string(user_id);
         
+    } else if (cmd_type == "SetParameters") {
+        /*
+         * The expected format is space-separated:
+         *   SetParameters userId offsetX offsetY northOrientation trackCompensation
+         *                internalParam trackType startLatitude startLongitude
+         */
+        int    user_id      = 0;
+        double offset_x     = 0.0;
+        double offset_y     = 0.0;
+        double north_ori    = 0.0;
+        double track_comp   = 0.0;
+        double internal_par = 0.0;
+        int    track_type   = 0;
+        double start_lat    = 0.0;
+        double start_lon    = 0.0;
+
+        if (!(iss >> user_id
+                  >> offset_x
+                  >> offset_y
+                  >> north_ori
+                  >> track_comp
+                  >> internal_par
+                  >> track_type
+                  >> start_lat
+                  >> start_lon)) {
+            std::cerr << "SetParameters: wrong parameter count or invalid value(s)"
+                      << std::endl;
+            return "ERROR SetParameters wrong parameter count";
+        }
+
+        // Log parameters for now (they are not used yet)
+        std::cout << "SetParameters (" << user_id << ") "
+                  << "offset_x=" << offset_x << ", "
+                  << "offset_y=" << offset_y << ", "
+                  << "north_orientation=" << north_ori << ", "
+                  << "track_compensation=" << track_comp << ", "
+                  << "internal_param=" << internal_par << ", "
+                  << "track_type=" << track_type << ", "
+                  << "start_lat=" << start_lat << ", "
+                  << "start_lon=" << start_lon << std::endl;
+
+        // Acknowledge receipt
+        return "OK (" + std::to_string(user_id) + ")";
+
     } else if (cmd_type == "Set") {
         std::string hex_data;
         iss >> hex_data;
