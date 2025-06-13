@@ -56,7 +56,7 @@ fn main() {
     let mut config = SensorServiceConfig::default();
     config.use_mock_listener = false;
     config.use_mock_arianna = false;
-    config.arianna_port = 5051;
+    // config.arianna_port = 5051;
     
     let sensor_service = SensorService::new(config);
     

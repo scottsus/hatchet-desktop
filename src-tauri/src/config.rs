@@ -19,7 +19,7 @@ impl Default for SensorServiceConfig {
             listener_ip: "127.0.0.1".to_string(),
             listener_port: 5050,
             arianna_host: "127.0.0.1".to_string(),
-            arianna_port: 5051,
+            arianna_port: 8000,
         }
     }
 }

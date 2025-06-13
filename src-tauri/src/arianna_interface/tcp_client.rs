@@ -22,10 +22,17 @@ impl TcpAriannaInterface {
         // Create a fresh connection for each command since server closes after each response
         let address = format!("{}:{}", self.host, self.port);
         
-        let mut stream = TcpStream::connect_timeout(
+        println!("Attempting to connect to {}", address);
+        let mut stream = match TcpStream::connect_timeout(
             &address.parse().map_err(|e| format!("Invalid address: {}", e))?,
             Duration::from_secs(5)
-        ).map_err(|e| format!("Failed to connect to Arianna server: {}", e))?;
+        ) {
+            Ok(s) => s,
+            Err(e) => {
+                println!("Connection error details: {:?}", e);
+                return Err(format!("Failed to connect to Arianna server at {}: {}", address, e));
+            }
+        };
         
         // Set timeouts
         stream.set_read_timeout(Some(Duration::from_secs(10)))
@@ -87,7 +94,7 @@ impl AriannaInterface for TcpAriannaInterface {
     
     fn set_parameters(&mut self, params: SetParametersRequest) -> Result<String, String> {
         let command = format!(
-            "SetParameters {} {} {} {} {} {} {} {} {}",
+            "SetParameters {},{},{},{},{},{},{},{},{}",
             params.user_id,
             params.offset_x,
             params.offset_y,

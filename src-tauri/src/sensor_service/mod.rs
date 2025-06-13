@@ -121,37 +121,29 @@ impl SensorService {
         initialized_operators: Arc<Mutex<HashSet<u8>>>,
         active_users: Arc<Mutex<HashSet<u8>>>,
     ) {
-        // Extract user ID from >Protect lines and add to active users
-        if data.starts_with(">Protect ") {
-            if let Some(user_id_str) = data.get(9..12) {
-                // Parse as decimal but handle leading zeros (089 -> 89)
-                if let Ok(user_id) = user_id_str.parse::<u8>() {
-                    let mut users = active_users.lock().unwrap();
-                    let is_new_user = users.insert(user_id);
-                    drop(users);
-                    
-                    if is_new_user {
-                        println!("New user detected: {}", user_id);
-                        Self::initialize_user(user_id, arianna.clone(), initialized_operators.clone());
-                    }
-                } else {
-                    println!("Failed to parse user ID from: '{}'", user_id_str);
-                }
-            }
-        }
-        
         // Handle hex data format - use the hex prefix to determine user ID
         if data.starts_with('#') {
             if let Some(hex_op_id) = data.get(1..3) {
                 if let Ok(operator_id) = u8::from_str_radix(hex_op_id, 16) {
-                    // Check if this user is in our active users set
-                    let users = active_users.lock().unwrap();
-                    if users.contains(&operator_id) {
+                    // Check if this user is already initialized
+                    let ops = initialized_operators.lock().unwrap();
+                    let is_initialized = ops.contains(&operator_id);
+                    drop(ops);
+                    
+                    if !is_initialized {
+                        println!("New user detected from hex data: {}", operator_id);
+                        Self::initialize_user(operator_id, arianna.clone(), initialized_operators.clone());
+                        
+                        // Add to active users
+                        let mut users = active_users.lock().unwrap();
+                        users.insert(operator_id);
                         drop(users);
-                        Self::process_user_data(operator_id, data, arianna, initialized_operators);
-                    } else {
-                        println!("Received hex data for inactive user: {}", operator_id);
                     }
+                    
+                    // Process the hex data for this user
+                    Self::process_user_data(operator_id, data, arianna, initialized_operators);
+                } else {
+                    println!("Failed to parse operator ID from hex: '{}'", hex_op_id);
                 }
             }
         }

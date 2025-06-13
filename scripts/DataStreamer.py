@@ -11,7 +11,7 @@ class DataStreamerPipe:
     
     # Server connection details
     SERVER_IP = "127.0.0.1"
-    SERVER_PORT = 80
+    SERVER_PORT = 8000
     
     @staticmethod
     def read_data(file_path=None):
@@ -23,7 +23,8 @@ class DataStreamerPipe:
         if file_path is None:
             # file_path = "RawData_20240408_090001_000001_000001_001.decod.74h"
             # file_path = "Phone_Data_Log_89.74h"
-            file_path = "C:\Personal_Projects\hatchet-desktop\public\level.csv"
+            # file_path = "C:\Personal_Projects\hatchet-desktop\public\level.csv"
+            file_path = "C:\\Personal_Projects\\hatchet-desktop\\scripts\\Ngrok_Data_Log_89.txt"
         
         # Check if file exists
         if os.path.exists(file_path):
@@ -52,7 +53,7 @@ class DataStreamerPipe:
         with open(file_path, 'r') as sr:
             table = sr.read()
             data = table.split('\n')
-            DataStreamerPipe.messages_list = [p for p in data if len(p) > 0 and p[0] == '#']
+            DataStreamerPipe.messages_list = [p for p in data if p.startswith('#')]
         
         op = -1
         first = DataStreamerPipe.messages_list[0][1:3] if DataStreamerPipe.messages_list else None
@@ -60,8 +61,12 @@ class DataStreamerPipe:
             op = int(first, 16)
 
         # Demo File init coords
-        lat = 41.87892716196967
-        lon = 12.508081927663124
+        # lat = 41.87892716196967
+        # lon = 12.508081927663124
+
+        # 47.61522666894797, -122.17756687189758
+        lat = 47.61522666894797
+        lon = -122.17756687189758
         
         return op, lat, lon
     
@@ -140,7 +145,7 @@ class DataStreamerPipe:
                 rot = 0.0
                 w1 = 0
                 w2 = 0
-                sel = 4
+                sel = 1
                 lat = lat
                 lon = lon
                 
@@ -174,7 +179,7 @@ class DataStreamerPipe:
                     await writer.drain()
                     
                     # Standard delay between messages
-                    await asyncio.sleep(1)  # Using 1 second as per original comment
+                    await asyncio.sleep(0.1)  # Using 1 second as per original comment
 
                     # # Run last command
                     # last_command = f"Last {op}\n"
@@ -199,7 +204,7 @@ class DataStreamerPipe:
                     # You can control this by setting DataStreamerPipe.retrieve_track_enabled = True
                     # before calling start_async()
                     
-                    if i % 10 == 0 and retrieve_track_data:
+                    if i == len(DataStreamerPipe.messages_list) - 1 and retrieve_track_data:
                         DataStreamerPipe.tracks_list.clear()
                         
                         # Send Get command
@@ -212,15 +217,32 @@ class DataStreamerPipe:
                         try:
                             full_response = ""
                             end_marker = f"End ({op})"
+                            start_time = time.time()
+                            max_total_time = 10  # Maximum 10 seconds for the entire operation
                             
-                            # Continue reading until we get the End message
+                            # Continue reading until we get the End message or timeout
                             while True:
-                                response = await asyncio.wait_for(reader.read(4096), timeout=2.0)
-                                chunk = response.decode()
-                                full_response += chunk
-                                
-                                if end_marker in full_response:
+                                if time.time() - start_time > max_total_time:
+                                    print("Total timeout waiting for complete response")
                                     break
+                                    
+                                try:
+                                    response = await asyncio.wait_for(reader.read(4096), timeout=2)
+                                    if not response:  # Empty response means connection closed
+                                        print("Received empty response, server may have closed the connection")
+                                        break
+                                        
+                                    chunk = response.decode()
+                                    print(f"Received chunk: {len(chunk)} bytes")
+                                    full_response += chunk
+                                    
+                                    if end_marker in full_response:
+                                        print("Found end marker in response")
+                                        break
+                                except asyncio.TimeoutError:
+                                    print("Chunk timeout, checking if we have partial data...")
+                                    if full_response:
+                                        break
                                     
                             print(f"Received complete track data: {len(full_response)} bytes")
                             
@@ -236,7 +258,7 @@ class DataStreamerPipe:
                                     print(f"End of track data: {line}")
                         except asyncio.TimeoutError:
                             print("Timeout waiting for track data")
-                
+
                 # Stop the communication
                 stop_command = f"Stop {op}\n"
                 print(f"Sending command: {stop_command.strip()}")
