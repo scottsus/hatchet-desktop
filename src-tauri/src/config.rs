@@ -1,5 +1,5 @@
 
-pub const KNOWN_USER_IDS: &[u8] = &[89, 69];
+pub const KNOWN_USER_IDS: &[u8] = &[89, 69, 65];
 
 #[derive(Debug, Clone)]
 pub struct SensorServiceConfig {

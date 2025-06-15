@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use crate::config::{SensorServiceConfig, KNOWN_USER_IDS};
 use crate::sensor_listener::{SensorListener, TcpSensorListener, MockSensorListener};
 use crate::arianna_interface::{AriannaInterface, TcpAriannaInterface, MockAriannaInterface, SetParametersRequest};
@@ -9,6 +9,7 @@ pub struct SensorService {
     arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
     initialized_operators: Arc<Mutex<HashSet<u8>>>,
     active_users: Arc<Mutex<HashSet<u8>>>,
+    pending_updates: Arc<Mutex<HashMap<u8, Vec<String>>>>,
     config: SensorServiceConfig,
 }
 
@@ -31,8 +32,29 @@ impl SensorService {
             arianna: Arc::new(Mutex::new(arianna)),
             initialized_operators: Arc::new(Mutex::new(HashSet::new())),
             active_users: Arc::new(Mutex::new(HashSet::new())),
+            pending_updates: Arc::new(Mutex::new(HashMap::new())),
             config,
         }
+    }
+
+    pub fn add_pending_position(&self, user_id: u8, position: String) {
+        let mut pending = self.pending_updates.lock().unwrap();
+        pending.entry(user_id).or_insert_with(Vec::new).push(position);
+    }
+    
+    pub fn get_next_pending_position(&self, user_id: u8) -> Option<String> {
+        let mut pending = self.pending_updates.lock().unwrap();
+        if let Some(positions) = pending.get_mut(&user_id) {
+            if !positions.is_empty() {
+                return Some(positions.remove(0));
+            }
+        }
+        None
+    }
+    
+    pub fn has_pending_update(&self, user_id: u8) -> bool {
+        let pending = self.pending_updates.lock().unwrap();
+        pending.get(&user_id).map_or(false, |positions| !positions.is_empty())
     }
     
     pub fn start(&self) -> Result<(), String> {
@@ -44,9 +66,16 @@ impl SensorService {
         let arianna_clone = self.arianna.clone();
         let initialized_ops_clone = self.initialized_operators.clone();
         let active_users_clone = self.active_users.clone();
+        let pending_updates_clone = self.pending_updates.clone();
         
         listener.set_data_callback(Arc::new(move |data| {
-            Self::handle_sensor_data(data, arianna_clone.clone(), initialized_ops_clone.clone(), active_users_clone.clone());
+            Self::handle_sensor_data(
+                data, 
+                arianna_clone.clone(), 
+                initialized_ops_clone.clone(), 
+                active_users_clone.clone(),
+                pending_updates_clone.clone()
+            );
         }));
         
         listener.start_listening(self.config.listener_ip.clone(), self.config.listener_port)?;
@@ -120,6 +149,7 @@ impl SensorService {
         arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
         initialized_operators: Arc<Mutex<HashSet<u8>>>,
         active_users: Arc<Mutex<HashSet<u8>>>,
+        pending_updates: Arc<Mutex<HashMap<u8, Vec<String>>>>,
     ) {
         // Handle hex data format - use the hex prefix to determine user ID
         if data.starts_with('#') {
@@ -141,7 +171,7 @@ impl SensorService {
                     }
                     
                     // Process the hex data for this user
-                    Self::process_user_data(operator_id, data, arianna, initialized_operators);
+                    Self::process_user_data(operator_id, data, arianna.clone(), initialized_operators.clone(), pending_updates);
                 } else {
                     println!("Failed to parse operator ID from hex: '{}'", hex_op_id);
                 }
@@ -154,23 +184,44 @@ impl SensorService {
         data: String,
         arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,
         initialized_operators: Arc<Mutex<HashSet<u8>>>,
+        pending_updates: Arc<Mutex<HashMap<u8, Vec<String>>>>,
     ) {
-        // Check if user is initialized before processing data
-        let ops = initialized_operators.lock().unwrap();
-        if !ops.contains(&operator_id) {
-            drop(ops);
-            println!("Received hex data for uninitialized user: {}", operator_id);
-            return;
-        }
-        drop(ops);
+        // Quick check if user is initialized
+        {
+            let ops = initialized_operators.lock().unwrap();
+            if !ops.contains(&operator_id) {
+                println!("Received data for uninitialized user: {}", operator_id);
+                return;
+            }
+        } // Lock is released here
         
-        let mut arianna = arianna.lock().unwrap();
-        match arianna.set(operator_id, data.clone()) {
-            Ok(response) => println!("Hex data: {}", response),
-            Err(e) => println!("Failed to set data for user {}: {}", operator_id, e),
+        // Handle everything in one operation with minimal locking
+        if let Ok(mut arianna_guard) = arianna.lock() {
+            // First command: set
+            match arianna_guard.set(operator_id, data) {
+                Ok(_) => {
+                    println!("Successfully set data for operator: {}", operator_id);
+                    
+                    // Keep the lock and immediately call last
+                    match arianna_guard.last(operator_id) {
+                        Ok(position) => {
+                            // Store the position data with minimal lock time
+                            pending_updates.lock().unwrap()
+                                .entry(operator_id)
+                                .or_insert_with(Vec::new)
+                                .push(position);
+                            println!("Position updated for operator: {}", operator_id);
+                        },
+                        Err(e) => println!("Failed to get last position for user {}: {}", operator_id, e),
+                    }
+                },
+                Err(e) => println!("Failed to set data for user {}: {}", operator_id, e),
+            }
+        } else {
+            println!("Failed to acquire lock on Arianna interface for operator {}", operator_id);
         }
     }
-    
+
     fn initialize_user(
         user_id: u8,
         arianna: Arc<Mutex<Box<dyn AriannaInterface>>>,

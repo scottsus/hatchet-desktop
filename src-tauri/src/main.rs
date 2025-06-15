@@ -21,15 +21,16 @@ fn start_data_streaming(state: State<AppState>) -> Result<(), String> {
     
     tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
-        
+    
         loop {
             interval.tick().await;
             
             let service = service.lock().unwrap();
             for &user_id in KNOWN_USER_IDS {
-                if service.is_user_initialized(user_id) {
-                    if let Ok(data) = service.get_last_position(user_id) {
-                        let _ = app_handle.emit_all("sensor_data", data);
+                if service.is_user_initialized(user_id) && service.has_pending_update(user_id) {
+                    // Get and emit any pending position data
+                    if let Some(position_data) = service.get_next_pending_position(user_id) {
+                        let _ = app_handle.emit_all("sensor_data", position_data);
                     }
                 }
             }
@@ -38,7 +39,6 @@ fn start_data_streaming(state: State<AppState>) -> Result<(), String> {
     
     Ok(())
 }
-
 #[command]
 fn set_global_arianna_parameters(
     state: State<AppState>,
