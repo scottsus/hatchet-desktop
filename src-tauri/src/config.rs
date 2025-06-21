@@ -1,5 +1,6 @@
 
-pub const KNOWN_USER_IDS: &[u8] = &[89, 69, 65];
+pub const KNOWN_USER_IDS: &[u8] = &[89, 69, 65, 95];
+pub const TCP_LISTENER_OUTPUT: bool = false;
 
 #[derive(Debug, Clone)]
 pub struct SensorServiceConfig {

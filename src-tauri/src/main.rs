@@ -30,6 +30,7 @@ fn start_data_streaming(state: State<AppState>) -> Result<(), String> {
                 if service.is_user_initialized(user_id) && service.has_pending_update(user_id) {
                     // Get and emit any pending position data
                     if let Some(position_data) = service.get_next_pending_position(user_id) {
+                        println!("Sensor data: {:?}", position_data);
                         let _ = app_handle.emit_all("sensor_data", position_data);
                     }
                 }

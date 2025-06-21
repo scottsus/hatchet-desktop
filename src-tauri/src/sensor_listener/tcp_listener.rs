@@ -4,6 +4,8 @@ use std::io::Read;
 use std::thread;
 use std::time::Duration;
 use super::traits::SensorListener;
+use crate::config::TCP_LISTENER_OUTPUT;
+
 
 pub struct TcpSensorListener {
     is_running: Arc<AtomicBool>,
@@ -62,7 +64,9 @@ impl SensorListener for TcpSensorListener {
                                         
                                         for line in data.lines() {
                                             if !line.trim().is_empty() {
-                                                println!("Data: [{}]", line);
+                                                if TCP_LISTENER_OUTPUT {
+                                                    println!("Data: [{}]", line);
+                                                }
                                                 if let Some(ref cb) = callback_clone {
                                                     cb(line.to_string());
                                                 }

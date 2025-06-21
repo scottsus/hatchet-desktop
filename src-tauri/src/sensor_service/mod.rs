@@ -36,11 +36,6 @@ impl SensorService {
             config,
         }
     }
-
-    pub fn add_pending_position(&self, user_id: u8, position: String) {
-        let mut pending = self.pending_updates.lock().unwrap();
-        pending.entry(user_id).or_insert_with(Vec::new).push(position);
-    }
     
     pub fn get_next_pending_position(&self, user_id: u8) -> Option<String> {
         let mut pending = self.pending_updates.lock().unwrap();
